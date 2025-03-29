@@ -312,13 +312,8 @@ def plugin_start3(plugin_dir: str) -> str:
     """
     return ppp.on_load()
 
+"""
 def version_check() -> str:
-    """
-    Parse latest GitHub release version
-
-    :return: The latest version string if it's newer than ours
-    """
-
     try:
         req = requests.get(url='https://api.github.com/repos/alby666/EDMC-PowerPlayProgress/releases/latest')
         data = req.json()
@@ -332,6 +327,7 @@ def version_check() -> str:
     if version > plugin_version:
         return str(version)
     return ''
+"""
 
 def plugin_stop() -> None:
     """
