@@ -5,10 +5,6 @@
 PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking their power play progress between docking/death events 
 as well as per system.
 
-BioScan is a multipurpose exobiology tool for Elite Dangerous. It utilizes the plugin system of the [Elite Dangerous
-Market Connector][EDMC] for backend journal processing and display.
-
-
 ## Requirements
 * [EDMC] version 5.7 and above (python 3.11)
 
