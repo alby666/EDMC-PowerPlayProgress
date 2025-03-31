@@ -23,7 +23,7 @@ from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.0'
+plugin_version: str = '0.9.1'
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
