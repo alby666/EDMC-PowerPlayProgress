@@ -14,6 +14,7 @@ import semantic_version  # type: ignore # noqa: N813
 
 import tkinter as tk
 from tkinter import ttk
+from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
 from config import appname, config # type: ignore # noqa: N813
@@ -211,6 +212,13 @@ class PowerPlayProgress:
         self.powerplay_level_label.grid(row=current_row, column=0, columnspan=2)
         current_row += 1
 
+        update_version = version_check()
+        if update_version != '':
+            url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
+            update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
+            update_link.grid(row=current_row, columnspan=2, sticky="N")
+            current_row += 1
+
         # progressbar
         self.pb = ttk.Progressbar(
             self.frame,
@@ -312,7 +320,6 @@ def plugin_start3(plugin_dir: str) -> str:
     """
     return ppp.on_load()
 
-"""
 def version_check() -> str:
     try:
         req = requests.get(url='https://api.github.com/repos/alby666/EDMC-PowerPlayProgress/releases/latest')
@@ -327,7 +334,6 @@ def version_check() -> str:
     if version > plugin_version:
         return str(version)
     return ''
-"""
 
 def plugin_stop() -> None:
     """
@@ -389,7 +395,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'location':
             """
             Update the current system.
-            'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
+            'cmdr = "CMDR hsgfhsgfhs", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
             logger.debug("Location event")
             found = False
