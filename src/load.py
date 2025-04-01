@@ -23,7 +23,7 @@ from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.1'
+plugin_version: str = '0.9.0'
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -213,6 +213,7 @@ class PowerPlayProgress:
         current_row += 1
 
         update_version = version_check()
+        #update_version = '0.9.1'  # for testing
         if update_version != '':
             url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
             update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
@@ -294,15 +295,16 @@ class PowerPlayProgress:
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
-        self.total_merits_label.config(text=f"Total Merits: {round(self.total_merits, 0)}")
-        self.total_session_merits.config(text=f"Total Merits this session: {round(self.total_merits - self.starting_merits, 0)}")
-        self.total_since_merits.config(text=f"Total Merits since last dock/death: {round(self.current_session.earned_merits, 0)}")
-        self.total_prev_merits.config(text=f"Total Merits since previous dock/death: {round(self.previous_session.earned_merits, 0)}")
+        self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{round(self.total_merits, 0)}")
+        self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{round(self.total_merits - self.starting_merits, 0)}")
+        self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{round(self.current_session.earned_merits, 0)}")
+        self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{round(self.previous_session.earned_merits, 0)}")
         
         cur_row = 7
         for sys in self.systems:
             if sys.earnings > 0:
-                lbl = tk.Label(self.frame, text=f"\t{sys.system}:\t {round(sys.earnings, 0)}")
+                tab_spacing = '\t' if len(sys.system) < 8 else ''
+                lbl = tk.Label(self.frame, text=f"\t{sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
                 cur_row += 1
         self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
@@ -396,7 +398,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'location':
             """
             Update the current system.
-            'cmdr = "CMDR hsgfhsgfhs", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
+            'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
             logger.debug("Location event")
             found = False
@@ -454,6 +456,22 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'powerplaymerits':
             logger.debug("PowerplayMerits event")
             #{"timestamp":"2025-03-29T10:30:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":20,"TotalMerits":1084567}
+            #First check if EDMC was loaded after the game was started.
+            if ppp.current_session.power_play == '':
+                ppp.current_session.power_play = entry["Power"]
+                ppp.current_session.power_play_rank = ppp.CurrentRank(entry["TotalMerits"])
+                ppp.powerplay_level_label.config(text=f"PowerPlay Level: {ppp.current_session.power_play_rank} -> {ppp.current_session.power_play_rank + 1}", justify=tk.CENTER)
+                ppp.starting_merits = int(entry["TotalMerits"]) - int(entry["MeritsGained"])
+                ppp.total_merits = int(entry["TotalMerits"])
+                ppp.pb['value'] = round((ppp.starting_merits - ppp.CurrentRankLowerBound(ppp.current_session.power_play_rank)) / ppp.NextRankDifference(ppp.current_session.power_play_rank) * 100, 2)
+                ppp.value_label.config(text=str(ppp.pb['value'])+' %')    
+
+                if system != '':
+                    ppp.current_system = SystemProgress()
+                    ppp.current_system.system = system
+                    ppp.current_system.earnings = 0
+                    ppp.systems.append(ppp.current_system)
+
             ppp.current_session.earned_merits += entry["MeritsGained"]
             ppp.total_merits = entry["TotalMerits"]
             for sys in ppp.systems:
