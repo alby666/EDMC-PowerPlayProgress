@@ -4,9 +4,9 @@ on:
   workflow_dispatch: # Enables manual triggering of this workflow
     inputs:
       release_number: # Define input for the release version
-        description: "Release version (e.g., v1.0)"
+        description: "Release version (e.g., 1.0.0)"
         required: true
-        default: "v1.0"
+        default: "1.0.0"
 
 jobs:
   build-and-compress:
