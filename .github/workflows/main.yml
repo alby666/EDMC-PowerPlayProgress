@@ -1,0 +1,65 @@
+name: Build and Compress Release
+
+on:
+  workflow_dispatch: # Enables manual triggering of this workflow
+    inputs:
+      release_number: # Define input for the release version
+        description: "Release version (e.g., v1.0)"
+        required: true
+        default: "v1.0"
+
+jobs:
+  build-and-compress:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Replace Version Constant in Python File
+        run: |
+          python -c "file = 'src/load.py'; version = '${{ inputs.version_number }}'; lines = []; \
+          with open(file, 'r') as f: lines = [f'plugin_version: str = \"{version}\"\n' if line.startswith('plugin_version: str =') else line for line in f]; \
+          with open(file, 'w') as f: f.writelines(lines)"
+          
+      - name: Fetch Closed Issues
+        id: fetch_issues
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issues = await github.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed', // Fetch closed issues
+              per_page: 10 // Limit number of issues fetched
+            });
+
+            // Format issues as markdown list
+            const issueBody = issues.data.map(issue => `- [#${issue.number}](${issue.html_url}) ${issue.title}`).join('\n');
+            core.setOutput("issue_body", issueBody);
+
+      - name: Compress Files
+        run: zip -r EDMC-PowerPlayProgress.zip ./src -x ".git/*" ".github/*"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EDMC-PowerPlayProgress-zip
+          path: EDMC-PowerPlayProgress.zip
+          
+      - name: Create Tag
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag -a ${{ inputs.release_number }} -m "Release ${{ inputs.release_number }}"
+          git push origin ${{ inputs.release_number }}
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ inputs.release_number }}
+          release_name: Release ${{ inputs.release_number }}
+          body: ${{ steps.fetch_issues.outputs.issue_body }}
+          draft: false
+          prerelease: false
+
