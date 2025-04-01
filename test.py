@@ -16,8 +16,9 @@ def version_check() -> str:
         #logger.error('Failed to parse GitHub release info', exc_info=ex)
         return ''
 
+    plugin_ver = semantic_version.Version(plugin_version)
     version = semantic_version.Version(data['tag_name'][1:])
-    if version > plugin_version:
+    if version > plugin_ver:
         return str(version)
     return ''
 
