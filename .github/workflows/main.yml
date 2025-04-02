@@ -18,9 +18,9 @@ jobs:
 
       - name: Replace Version Constant in Python File
         run: |
-          python -c "file = 'src/load.py'; version = '${{ inputs.version_number }}'; lines = []; \
-          with open(file, 'r') as f: lines = [f'plugin_version: str = \"{version}\"\n' if line.startswith('plugin_version: str =') else line for line in f]; \
-          with open(file, 'w') as f: f.writelines(lines)"
+          file='src/load.py'
+          version="${{ inputs.release_number }}"
+          python -c "import os; file_path = os.getenv('file'); version = os.getenv('version'); lines = []; with open(file_path, 'r') as f: lines = [f'plugin_version: str = \"{version}\"\n' if line.startswith('plugin_version: str =') else line for line in f]; with open(file_path, 'w') as f: f.writelines(lines)"
           
       - name: Fetch Closed Issues
         id: fetch_issues
