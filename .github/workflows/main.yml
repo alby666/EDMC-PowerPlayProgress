@@ -16,11 +16,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Replace Version Constant in Python File
+      - name: Replace Version in Python File
         run: |
-          file='src/load.py'
+          file="src/load.py"
           version="${{ inputs.release_number }}"
-          python -c "import os; file_path = os.getenv('file'); version = os.getenv('version'); lines = []; with open(file_path, 'r') as f: lines = [f'plugin_version: str = \"{version}\"\n' if line.startswith('plugin_version: str =') else line for line in f]; with open(file_path, 'w') as f: f.writelines(lines)"
+          sed -i "s/^plugin_version: str = '.*'/plugin_version: str = '${version}'/" $file
+
           
       - name: Fetch Closed Issues
         id: fetch_issues
