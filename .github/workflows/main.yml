@@ -21,18 +21,19 @@ jobs:
           file="src/load.py"
           version="${{ inputs.release_number }}"
           sed -i "s/^plugin_version: str = '.*'/plugin_version: str = '${version}'/" $file
-
           
       - name: Fetch Closed Issues
         id: fetch_issues
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issues = await github.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'closed', // Fetch closed issues
-              per_page: 10 // Limit number of issues fetched
+              per_page: 10, // Limit number of issues fetched
+              since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // Fetch issues closed in the last week              
             });
 
             // Format issues as markdown list

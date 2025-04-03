@@ -11,7 +11,7 @@ PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking
 
 ## Installation
 
-* Download the [latest release] of EDMC-PowerPlayProgress
+* Download the [latestrelease] of EDMC-PowerPlayProgress
   * Appropriate versions of both are available on every release page
 * Extract the `.zip` archives that you downloaded into the EDMC `plugins` folder
   * This is accessible via the plugins tab in the EDMC settings window
@@ -19,12 +19,13 @@ PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking
 
 ## License
 
-[PowerPlayProgress] Copyright © 2025 Alan Byrne
+[PowerPlayProgress] Copyright © 2025 [alby666]
 
 Licensed under the [GNU Public License (GPL)][GPLv2] version 2 or later.
 
 [EDMC]: https://github.com/EDCD/EDMarketConnector/wiki
 [PowerPlayProgress]: https://github.com/alby666/EDMC-PowerPlayProgress
-[latest release]: https://github.com/alby666/EDMC-PowerPlayProgress/releases/latest
+[latestrelease]: https://github.com/alby666/EDMC-PowerPlayProgress/releases/latest
 [GPLv2]: http://www.gnu.org/licenses/gpl-2.0.html
+[alby666]: https://github.com/alby666
 
