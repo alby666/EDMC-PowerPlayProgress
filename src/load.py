@@ -19,11 +19,11 @@ from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 import myNotebook as nb  # type: ignore # noqa: N813
 from config import appname, config # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
-#from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
+from theme import theme # type: ignore # noqa: N813
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.0'
+plugin_version: str = '0.9.2'
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -306,8 +306,10 @@ class PowerPlayProgress:
                 tab_spacing = '\t' if len(sys.system) < 8 else ''
                 lbl = tk.Label(self.frame, text=f"\t{sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
+                theme.register(lbl)
                 cur_row += 1
         self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
+        theme.update(self.frame)
 
 ppp = PowerPlayProgress()
 

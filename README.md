@@ -4,7 +4,7 @@
 
 PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking their power play progress between docking/death events as well as per system.
 
-<img src="screen_shot.png">
+<img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
 ## Requirements
 * [EDMC] version 5.7 and above (python 3.11)
