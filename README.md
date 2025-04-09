@@ -2,7 +2,12 @@
 
 ## Summary
 
-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking their power play progress between docking/death events as well as per system.
+PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking their power play progress:
+
+* Visual progress between ranks
+* Between dock/death events 
+* Merits gained per system
+* Tracks power play commodities collections & deliveries
 
 <img src="screen_shot.png"> <img src="screen_shot_dark.png">
 

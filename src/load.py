@@ -23,21 +23,104 @@ from theme import theme # type: ignore # noqa: N813
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.2'
+plugin_version: str = '0.9.3'
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
 class SessionProgress(object):
+    
+    class Commodities(object):
+        """
+        Represents the commodities collected and delivered in a single session.
+        By type and delivered system.
+        """
+        def __init__(self, type='', type_localised='', delivered_system='', collected=0, delivered=0) -> None:
+            self.type = type
+            self.type_localised = type_localised
+            self.delivered_system = delivered_system
+            self.collected = int(collected)
+            self.delivered = int(delivered)
+    
     """
     Represents the progress in a single session i.e. from the last dock to the current dock or death.
     """
     def __init__(self, earned_merits=0, time=0, 
-                 is_docking_event=0, power_play_rank=0, power_play=''):
+                 is_docking_event=0, power_play_rank=0, power_play='') -> None:
         self.earned_merits = int(earned_merits)
         self.time = int(time)
         self.is_docking_event = int(is_docking_event)
         self.power_play_rank = int(power_play_rank)
         self.power_play = power_play
+        self.commodities: list[SessionProgress.Commodities] = []
+        self.commodities_delivered_systems: list[str] = []
+        self.commodities_delivered_types: list[str] = []
+
+    @property
+    def total_commodities_collected(self):
+        total = 0
+        for c in self.commodities:
+            total += c.collected
+        return total
+
+    @property
+    def total_commodities_delivered(self):
+        total = 0
+        for c in self.commodities:
+            total += c.delivered
+        return total
+
+    def total_commodities_delivered_by_system(self, delivered_system: str):
+        total = 0
+        for c in self.commodities:
+            if c.delivered_system == delivered_system:
+                total += c.delivered
+        return total
+
+    def total_commodities_delivered_by_type(self, type_localised: str):
+        total = 0
+        for c in self.commodities:
+            if c.type_localised == type_localised:
+                total += c.delivered
+        return total
+
+    def add_commodity(self, commodity: Commodities) -> None:
+        """
+        Add a commodity to the session.
+        """
+        found = False
+        for c in self.commodities:
+            if c.type == commodity.type and c.delivered_system == commodity.delivered_system:
+                # If the commodity is found, update the collected and delivered values
+                c.collected += commodity.collected
+                c.delivered += commodity.delivered
+                found = True
+                break
+        if not found:
+            # If the commodity is not found, append it to the list
+            self.commodities.append(commodity)
+
+        if commodity.delivered > 0:
+            # If the commodity is collected, append it to the list
+            found = False
+            for sys in self.commodities_delivered_systems:
+                if sys == commodity.delivered_system:
+                    found = True
+                    break
+            if not found:
+                # If the commodity is not found, append it to the list
+                self.commodities_delivered_systems.append(commodity.delivered_system)
+                logger.debug(f"Commodity delivered system: {commodity.delivered_system}")
+
+            found = False
+            for typ in self.commodities_delivered_types:
+                if typ == commodity.type_localised:
+                    found = True
+                    break
+            if not found:
+                # If the commodity is not found, append it to the list
+                self.commodities_delivered_types.append(commodity.type_localised)
+                logger.debug(f"Commodity delivered type: {commodity.type_localised}")
+
 
 class SystemProgress(object):
     """
@@ -66,12 +149,14 @@ class PowerPlayProgress:
         self.starting_merits = 0
         self.total_merits = 0
         self.systems: list[SystemProgress] = []
+        self.power_play_list_labels: list[tk.Label] = []
         self.current_system: SystemProgress = SystemProgress()
         self.frame: tk.Frame = tk.Frame()
         self.total_merits_label: tk.Label = tk.Label()    
         self.total_session_merits: tk.Label = tk.Label()
         self.total_since_merits: tk.Label = tk.Label()
         self.total_prev_merits: tk.Label = tk.Label()
+        self.powerplay_commodities_label = tk.Label()
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
         logger.info("PowerPlayProgress instantiated")
@@ -176,7 +261,7 @@ class PowerPlayProgress:
         else:
             return 15000 + (8000 * (currentRank - 5))
             
-    def copy_to_clipboard(self):
+    def copy_to_clipboard_text(self):
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
         self.frame.clipboard_append(self.total_merits_label.cget("text"))
@@ -187,13 +272,36 @@ class PowerPlayProgress:
         self.frame.clipboard_append("\n")
         self.frame.clipboard_append(self.total_prev_merits.cget("text"))
         self.frame.clipboard_append("\n")
-        self.frame.clipboard_append(self.merits_by_systems_label.cget("text"))
-        self.frame.clipboard_append("\n")
+        #self.frame.clipboard_append(self.merits_by_systems_label.cget("text"))
+        #self.frame.clipboard_append("\n")
 
-        for sys in self.systems:
-            if sys.earnings > 0:
-                self.frame.clipboard_append("\t" + sys.system + ": " + str(sys.earnings))
-                self.frame.clipboard_append("\n")        
+        for lbl in self.power_play_list_labels:
+            self.frame.clipboard_append(lbl.cget("text"))
+            self.frame.clipboard_append("\n")
+        #for sys in self.systems:
+        #    if sys.earnings > 0:
+        #        self.frame.clipboard_append("\t" + sys.system + ": " + str(sys.earnings))
+        #        self.frame.clipboard_append("\n")        
+        self.frame.update()  # Ensure clipboard updates
+
+    def copy_to_clipboard_discord(self):
+        # Clear the clipboard and append the label's text
+        self.frame.clipboard_clear()
+        
+        # Add Markdown headers and formatting for Discord
+        self.frame.clipboard_append("**" + self.total_merits_label.cget("text") + "**\n")
+        self.frame.clipboard_append("**" + self.total_session_merits.cget("text") + "**\n")
+        self.frame.clipboard_append("**" + self.total_since_merits.cget("text") + "**\n")
+        self.frame.clipboard_append("**" + self.total_prev_merits.cget("text") + "**\n")
+        #self.frame.clipboard_append("**Merits by Systems:** " + self.merits_by_systems_label.cget("text") + "\n\n")
+        
+        # Format labels in the power_play_list_labels list
+        for lbl in self.power_play_list_labels:
+            if lbl.cget("text").left(1) != "\t":
+                self.frame.clipboard_append(f"**" + lbl.cget("text") + "**\n")
+            else:
+                self.frame.clipboard_append("- " + lbl.cget("text") + "\n")  # Use bullet points
+        
         self.frame.update()  # Ensure clipboard updates
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
@@ -232,8 +340,10 @@ class PowerPlayProgress:
         self.pb['value'] = self.click_count.get()
 
         # progress label
-        self.value_label = tk.Label(self.frame, text=self.click_count.get()+' %')
-        self.value_label.grid(column=0, row=current_row, columnspan=2)
+        self.value_label = tk.Label(self.frame, text=self.click_count.get()+' %', font=("Arial", 8))
+
+        # Resize by adjusting font and move 2 pixels down with 'pady'
+        self.value_label.grid(column=0, row=current_row, columnspan=2)  # Top padding: 2 pixels
         current_row += 1
 
         self.total_merits_label = tk.Label(self.frame, text=f"Total Merits: 345345")
@@ -254,10 +364,14 @@ class PowerPlayProgress:
         self.merits_by_systems_label.grid(row=current_row, column=0, sticky="w")        
         current_row += 1
 
+        self.powerplay_commodities_label = tk.Label(self.frame, text="PowerPlay Commodities (collected/delivered): 34/56")
+        self.powerplay_commodities_label.grid(row=current_row, column=0, sticky="w")
+        current_row += 1
+
         self.copy_button = tk.Button(
             self.frame,
             text="Copy Progress",
-            command=self.copy_to_clipboard
+            command=self.copy_to_clipboard_text
         )
         self.copy_button.grid(row=current_row, column=0, columnspan=2, sticky="W")
         current_row += 1
@@ -270,6 +384,7 @@ class PowerPlayProgress:
         self.total_since_merits.grid_remove()
         self.total_prev_merits.grid_remove()
         self.merits_by_systems_label.grid_remove()
+        self.powerplay_commodities_label.grid_remove()
         self.copy_button.grid_remove()
 
         return self.frame
@@ -286,9 +401,7 @@ class PowerPlayProgress:
         self.total_session_merits.grid()
         self.total_since_merits.grid()
         self.total_prev_merits.grid()
-        self.merits_by_systems_label.grid()
-        self.copy_button.grid()
-
+        
         locale.setlocale(locale.LC_ALL, '')
 
         ## Update the progress bar and label with the current session data
@@ -300,19 +413,60 @@ class PowerPlayProgress:
         self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{round(self.current_session.earned_merits, 0)}")
         self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{round(self.previous_session.earned_merits, 0)}")
         
+        ## Remove the previous labels from the list and destroy them
+        for lbl in self.power_play_list_labels:
+            lbl.destroy()
+        self.power_play_list_labels.clear()
+
         cur_row = 7
+        self.merits_by_systems_label.grid(row=cur_row)
+        cur_row += 1
         for sys in self.systems:
             if sys.earnings > 0:
                 tab_spacing = '\t' if len(sys.system) < 8 else ''
                 lbl = tk.Label(self.frame, text=f"\t{sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
                 theme.register(lbl)
+                self.power_play_list_labels.append(lbl)
                 cur_row += 1
-        self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
+
+        if self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0:
+            self.powerplay_commodities_label.grid(row=cur_row)
+            self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
+            cur_row += 1
+            if self.current_session.total_commodities_delivered > 0:
+                lbl = tk.Label(self.frame, text=f"Delivered By type:")
+                lbl.grid(row=cur_row, column=0, sticky="w")
+                self.power_play_list_labels.append(lbl)
+                cur_row += 1
+                for commod in self.current_session.commodities_delivered_types:
+                    count = self.current_session.total_commodities_delivered_by_type(commod)
+                    if count > 0:
+                        lbl = tk.Label(self.frame, text=f"\t{commod}:\t{round(count, 0)}")
+                        lbl.grid(row=cur_row, column=0, sticky="w")
+                        self.power_play_list_labels.append(lbl)
+                        theme.register(lbl)
+                        cur_row += 1
+
+                lbl = tk.Label(self.frame, text=f"Delivered By system:")
+                lbl.grid(row=cur_row, column=0, sticky="w")
+                self.power_play_list_labels.append(lbl) 
+                cur_row += 1
+                for commod in self.current_session.commodities_delivered_systems:
+                    count = self.current_session.total_commodities_delivered_by_system(commod)
+                    if count > 0:
+                        tab_spacing = '\t' if len(commod) < 8 else ''
+                        lbl = tk.Label(self.frame, text=f"\t{commod}:\t{tab_spacing}{round(count, 0)}")
+                        lbl.grid(row=cur_row, column=0, sticky="w")
+                        self.power_play_list_labels.append(lbl)
+                        theme.register(lbl)
+                        cur_row += 1
+
+        self.copy_button.grid(row=cur_row)
+        cur_row += 1
         theme.update(self.frame)
 
 ppp = PowerPlayProgress()
-
 
 # Note that all of these could be simply replaced with something like:
 # plugin_start3 = ppp.on_load
@@ -394,6 +548,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
     #)
 
     locale.setlocale(locale.LC_ALL, '')
+    new_event = False
     event_type = entry['event'].lower()
     match event_type:
 
@@ -402,6 +557,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             Update the current system.
             'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
+            new_event = True
             logger.debug("Location event")
             found = False
             for sys in ppp.systems:
@@ -418,6 +574,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'fsdjump':
             logger.debug("fsdjump event")
+            new_event = True
             found = False
             for sys in ppp.systems:
                 if sys.system == system:
@@ -437,28 +594,47 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             logger.debug("Docked or died event")
             #{"timestamp":"2025-03-29T11:57:38Z","event":"Docked","StationName":"Gelfand Dock","StationType":"Coriolis","Taxi":false,"Multicrew":false,"StarSystem":"Misisture","SystemAddress":5368172137360,"MarketID":3225950976,"StationFaction":{"Name":"Blackiron","FactionState":"Expansion"},"StationGovernment":"$government_Corporate;","StationGovernment_Localised":"Corporate","StationAllegiance":"Federation","StationServices":["dock","autodock","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Industrial;","StationEconomy_Localised":"Industrial","StationEconomies":[{"Name":"$economy_Industrial;","Name_Localised":"Industrial","Proportion":1.0}],"DistFromStarLS":225.201053,"ActiveFine":true,"LandingPads":{"Small":17,"Medium":18,"Large":9}}
             #{"timestamp":"2025-03-29T11:42:44Z","event":"Died","KillerName":"Exobyte Corp","KillerShip":"cobramkiv","KillerRank":"Competent"}
+            new_event = True
             ppp.previous_session = ppp.current_session
             ppp.current_session = SessionProgress()
             ppp.current_session.time = datetime.now()
             ppp.current_session.earned_merits = 0
             ppp.current_session.power_play = ppp.previous_session.power_play
             ppp.current_session.power_play_rank = ppp.previous_session.power_play_rank
+            ppp.current_session.commodities = ppp.previous_session.commodities
+            ppp.current_session.commodities_delivered_systems = ppp.previous_session.commodities_delivered_systems
+            ppp.current_session.commodities_delivered_types = ppp.previous_session.commodities_delivered_types
 
         #"PowerplayCollect"
         #"PowerplayDeliver"
         #"PowerplayMerits"   
         #"PowerplayRank"
 
-        #case 'powerplaycollect':
-        #    this.currentSession.earnings += entry["Merits"]
+        case 'powerplaycollect':
+            #{"timestamp":"2025-04-05T11:29:18Z","event":"PowerplayCollect","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
+            logger.debug(
+                f'powerplaycollect - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
+                f', system = "{system}", station = "{station}"'
+                f', event = "{entry["event"]}"'
+                )
+            new_event = True
+            ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, entry["Count"], 0))
 
-        #case 'powerplaydeliver':
-        #    this.currentSession.earnings += entry["Merits"]
+        case 'powerplaydeliver':
+            #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
+            logger.debug(
+                f'powerplaydeliver - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
+                f', system = "{system}", station = "{station}"'
+                f', event = "{entry["event"]}"'
+                )
+            new_event = True
+            ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
 
         case 'powerplaymerits':
             logger.debug("PowerplayMerits event")
             #{"timestamp":"2025-03-29T10:30:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":20,"TotalMerits":1084567}
             #First check if EDMC was loaded after the game was started.
+            new_event = True
             if ppp.current_session.power_play == '':
                 ppp.current_session.power_play = entry["Power"]
                 ppp.current_session.power_play_rank = ppp.CurrentRank(entry["TotalMerits"])
@@ -484,11 +660,13 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'powerplayrank':
             logger.debug("PowerplayRank event")
             #{"timestamp":"2025-03-29T10:47:35Z","event":"PowerplayRank","Power":"Jerome Archer","Rank":139}
+            new_event = True
             ppp.current_session.power_play_rank = entry["Rank"]
 
         case 'powerplay':
             logger.debug("Powerplay event")
             #{"timestamp":"2025-03-23T08:39:26Z","event":"Powerplay","Power":"Jerome Archer","Rank":138,"Merits":1084487,"TimePledged":12319106}
+            new_event = True
             ppp.current_session.power_play = entry["Power"]
             ppp.current_session.power_play_rank = entry["Rank"]
             ppp.powerplay_level_label.config(text=f"PowerPlay Level: {entry['Rank']} -> {int(entry['Rank']) + 1}", justify=tk.CENTER)
@@ -508,4 +686,4 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system.earnings = 0
                 ppp.systems.append(ppp.current_system)
             
-    if ppp.total_merits > 0: ppp.Update_Ppp_Display()
+    if ppp.total_merits > 0 and new_event: ppp.Update_Ppp_Display()

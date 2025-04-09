@@ -1,29 +1,38 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter.ttk import Progressbar, Style
 
+def toggle_colors():
+    global toggle
+    if toggle:
+        # Apply black background and orange bar
+        style.configure("black.Orange.Horizontal.TProgressbar", 
+                        background="orange", 
+                        troughcolor="black")
+        progressbar.config(style="black.Orange.Horizontal.TProgressbar")
+    else:
+        # Reset to the system default style (empty string resets the style)
+        progressbar.config(style="")
+    toggle = not toggle
+
+# Initialize the main window
 root = tk.Tk()
-root.geometry("300x150")
+root.title("Toggle Progress Bar Colors")
 
-# Create a ttk.Style object
-#style = ttk.Style()
+# Initialize the style
+style = Style()
+style.theme_use('default')  # Use default system styling
 
-# Configure a custom style for the Progressbar
-#style.theme_use("default")  # You can experiment with different themes
-#style.configure("Custom.Horizontal.TProgressbar",
-#                troughcolor="lightgray",  # Background color (track)
-#                background="#ff8000")       # Foreground color (bar)
+# Initialize the toggle state
+toggle = True
 
-# Create a Progressbar widget with the custom style
-progress = ttk.Progressbar(root, 
-                           orient="horizontal", length=200, mode="determinate")
-progress.config(troughcolor="lightgray")  # Background color (track)
-progress.configure(background="#ff8000")  # Foreground color (bar)
+# Create the progress bar
+progressbar = Progressbar(root, orient="horizontal", length=300, mode="determinate")
+progressbar.pack(pady=20)
+progressbar["value"] = 50  # Example progress value
 
-#progress = ttk.Progressbar(root, style="Custom.Horizontal.TProgressbar",
-#                           orient="horizontal", length=200, mode="determinate")
-progress.pack(pady=20)
+# Create a button to toggle colors
+toggle_button = tk.Button(root, text="Toggle Colors", command=toggle_colors)
+toggle_button.pack(pady=10)
 
-# Set the progress value
-progress['value'] = 50
-
+# Run the application
 root.mainloop()
