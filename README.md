@@ -11,6 +11,21 @@ PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs in tracking
 
 <img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
+### Merits by systems
+
+<img src="merits_menu_help.png">
+
+1. The system name
+2. The merits you have earned in this system
+3. The controlling power
+4. The current power state
+5. The power play state control progress
+6. The trend since EDMC was launched
+  - ↑ - increasing, ↓ - decreasing, ← - the same
+  * C = State Control Progess trend
+  * R = Reinforcement Score trend
+  * U = Undermining Score trend
+
 ## Requirements
 * [EDMC] version 5.7 and above (python 3.11)
 

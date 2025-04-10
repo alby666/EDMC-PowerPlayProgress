@@ -1,38 +1,32 @@
 import tkinter as tk
-from tkinter.ttk import Progressbar, Style
 
-def toggle_colors():
-    global toggle
-    if toggle:
-        # Apply black background and orange bar
-        style.configure("black.Orange.Horizontal.TProgressbar", 
-                        background="orange", 
-                        troughcolor="black")
-        progressbar.config(style="black.Orange.Horizontal.TProgressbar")
-    else:
-        # Reset to the system default style (empty string resets the style)
-        progressbar.config(style="")
-    toggle = not toggle
+def on_enter(event):
+    alt_label.grid(row=1, column=0)
+    alt_label.lift()  # Bring the label to the front
 
-# Initialize the main window
+def on_leave(event):
+    alt_label.grid_forget()
+
+# Create the main window
 root = tk.Tk()
-root.title("Toggle Progress Bar Colors")
+root.title("Hover Example")
+root.geometry("300x200")
 
-# Initialize the style
-style = Style()
-style.theme_use('default')  # Use default system styling
+# Create a frame to organize widgets
+frame = tk.Frame(root)
+frame.grid(row=0, column=0, padx=50, pady=50)
 
-# Initialize the toggle state
-toggle = True
+# Create the primary label
+label = tk.Label(frame, text="Hover over me!", font=("Arial", 14))
+label.grid(row=0, column=0)
 
-# Create the progress bar
-progressbar = Progressbar(root, orient="horizontal", length=300, mode="determinate")
-progressbar.pack(pady=20)
-progressbar["value"] = 50  # Example progress value
+# Create the alternate label
+alt_label = tk.Label(frame, text="Hello, I am an alternate label!", bg="lightyellow", font=("Arial", 10))
+alt_label.grid_forget()  # Start hidden
 
-# Create a button to toggle colors
-toggle_button = tk.Button(root, text="Toggle Colors", command=toggle_colors)
-toggle_button.pack(pady=10)
+# Bind hover events to the primary label
+label.bind("<Enter>", on_enter)
+label.bind("<Leave>", on_leave)
 
 # Run the application
 root.mainloop()

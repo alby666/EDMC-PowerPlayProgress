@@ -23,7 +23,7 @@ from theme import theme # type: ignore # noqa: N813
 
 # This **MUST** match the name of the folder the plugin is in.
 PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.3'
+plugin_version: str = '0.9.4'
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -128,6 +128,14 @@ class SystemProgress(object):
     """
     system = ''
     earnings = 0.0
+    controlling_power = ''
+    power_play_state = ''
+    power_play_state_control_progress = 0.0
+    power_play_state_reinforcement = 0.0
+    power_play_state_undermining = 0.0
+    orig_power_play_state_control_progress = 0.0
+    orig_power_play_state_reinforcement = 0.0
+    orig_power_play_state_undermining = 0.0
 
 class PowerPlayProgress:
     """
@@ -402,16 +410,23 @@ class PowerPlayProgress:
         self.total_since_merits.grid()
         self.total_prev_merits.grid()
         
-        locale.setlocale(locale.LC_ALL, '')
+        # Get the system's default locale
+        default_locale = locale.getlocale()
+        # Set the locale to the system's default
+        locale.setlocale(locale.LC_ALL, default_locale[0])
+        #localized_string = locale.format_string("%d", number, grouping=True)
 
         ## Update the progress bar and label with the current session data
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
         self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{round(self.total_merits, 0)}")
-        self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{round(self.total_merits - self.starting_merits, 0)}")
-        self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{round(self.current_session.earned_merits, 0)}")
-        self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{round(self.previous_session.earned_merits, 0)}")
+        total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
+        self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
+        total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
+        self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
+        total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
+        self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
         
         ## Remove the previous labels from the list and destroy them
         for lbl in self.power_play_list_labels:
@@ -423,8 +438,34 @@ class PowerPlayProgress:
         cur_row += 1
         for sys in self.systems:
             if sys.earnings > 0:
-                tab_spacing = '\t' if len(sys.system) < 8 else ''
-                lbl = tk.Label(self.frame, text=f"\t{sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
+                tab_spacing = '\t' if len(sys.system) < 7 else ''
+                control_state_change = ''
+                if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
+                    control_state_change = ' C\u2191' # Up arrow, increasing
+                elif sys.power_play_state_control_progress < sys.orig_power_play_state_control_progress:
+                    control_state_change = ' C\u2193' # Down arrow, decreasing
+                else:
+                    control_state_change = ' C\u2194' # Left-right arrow, no change
+                reinforcement_state_change = ''
+                if sys.power_play_state_reinforcement > sys.orig_power_play_state_reinforcement:
+                    reinforcement_state_change = ' R\u2191'
+                elif sys.power_play_state_reinforcement < sys.orig_power_play_state_reinforcement:
+                    reinforcement_state_change = ' R\u2193'
+                else:
+                    reinforcement_state_change = ' R\u2194'
+                undermining_state_change = ''
+                if sys.power_play_state_undermining > sys.orig_power_play_state_undermining:
+                    undermining_state_change = ' U\u2191'
+                elif sys.power_play_state_undermining < sys.orig_power_play_state_undermining:
+                    undermining_state_change = ' U\u2193'
+                else:
+                    undermining_state_change = ' U\u2194'
+
+                lbl = None
+                if sys.controlling_power != '':
+                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{round(sys.earnings, 0)} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
+                else:
+                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
                 theme.register(lbl)
                 self.power_play_list_labels.append(lbl)
@@ -442,7 +483,7 @@ class PowerPlayProgress:
                 for commod in self.current_session.commodities_delivered_types:
                     count = self.current_session.total_commodities_delivered_by_type(commod)
                     if count > 0:
-                        lbl = tk.Label(self.frame, text=f"\t{commod}:\t{round(count, 0)}")
+                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
                         lbl.grid(row=cur_row, column=0, sticky="w")
                         self.power_play_list_labels.append(lbl)
                         theme.register(lbl)
@@ -455,8 +496,8 @@ class PowerPlayProgress:
                 for commod in self.current_session.commodities_delivered_systems:
                     count = self.current_session.total_commodities_delivered_by_system(commod)
                     if count > 0:
-                        tab_spacing = '\t' if len(commod) < 8 else ''
-                        lbl = tk.Label(self.frame, text=f"\t{commod}:\t{tab_spacing}{round(count, 0)}")
+                        tab_spacing = '\t' if len(commod) < 7 else ''
+                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
                         lbl.grid(row=cur_row, column=0, sticky="w")
                         self.power_play_list_labels.append(lbl)
                         theme.register(lbl)
@@ -557,12 +598,24 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             Update the current system.
             'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
+            #{"timestamp":"2025-04-08T20:23:51Z","event":"Location","DistFromStarLS":313.110615,"Docked":true,"StationName":"Pratchett Gateway","StationType":"Orbis","MarketID":3226027008,"StationFaction":{"Name":"Casual Crew"},"StationGovernment":"$government_Democracy;","StationGovernment_Localised":"Democracy","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Agri;","StationEconomy_Localised":"Agriculture","StationEconomies":[{"Name":"$economy_Agri;","Name_Localised":"Agriculture","Proportion":1.0}],"Taxi":false,"Multicrew":false,"StarSystem":"Tobala","SystemAddress":3618266663283,"StarPos":[23.34375,-42.46875,79.3125],"SystemAllegiance":"Independent","SystemEconomy":"$economy_Agri;","SystemEconomy_Localised":"Agriculture","SystemSecondEconomy":"$economy_Terraforming;","SystemSecondEconomy_Localised":"Terraforming","SystemGovernment":"$government_Democracy;","SystemGovernment_Localised":"Democracy","SystemSecurity":"$SYSTEM_SECURITY_medium;","SystemSecurity_Localised":"Medium Security","Population":4779808034,"Body":"Pratchett Gateway","BodyID":47,"BodyType":"Station",
+            # "ControllingPower":"Denton Patreus","Powers":["Denton Patreus","Yuri Grom","Jerome Archer"],"PowerplayState":"Fortified","PowerplayStateControlProgress":0.278852,"PowerplayStateReinforcement":11942,"PowerplayStateUndermining":88,"Factions":[{"Name":"Revolutionary Tobala Democrats","FactionState":"None","Government":"Democracy","Influence":0.014985,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-22.0847},{"Name":"Tobala Vision Industries","FactionState":"None","Government":"Corporate","Influence":0.00999,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Traditional Tobala Nationalists","FactionState":"None","Government":"Dictatorship","Influence":0.011988,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Tobala Gold Posse","FactionState":"None","Government":"Anarchy","Influence":0.00999,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-18.7796},{"Name":"Tobala Jet Creative & Co","FactionState":"None","Government":"Corporate","Influence":0.034965,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-9.51682,"RecoveringStates":[{"State":"PublicHoliday","Trend":0}]},{"Name":"Loosely Organized Lunatics","FactionState":"None","Government":"Dictatorship","Influence":0.144855,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"RecoveringStates":[{"State":"Blight","Trend":0}]},{"Name":"Casual Crew","FactionState":"None","Government":"Democracy","Influence":0.773227,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"PendingStates":[{"State":"Expansion","Trend":0}]}],"SystemFaction":{"Name":"Casual Crew"}}
             new_event = True
             logger.debug("Location event")
             found = False
             for sys in ppp.systems:
                 if sys.system == system:
                     sys.earnings += ppp.current_system.earnings
+                    if sys.controlling_power == '':
+                        # If the system is found, set the original values as some scenarios it is possible to have a location event before a fsdjump event.
+                        sys.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                        sys.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                        sys.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
+                    sys.controlling_power = entry["ControllingPower"]
+                    sys.power_play_state = entry["PowerplayState"]
+                    sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                    sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                    sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
                     found = True
                     break
             if not found:
@@ -570,21 +623,47 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
+                ppp.current_system.controlling_power = entry["ControllingPower"]
+                ppp.current_system.power_play_state = entry["PowerplayState"]
+                ppp.current_system.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                ppp.current_system.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                ppp.current_system.power_play_state_undermining = entry["PowerplayStateUndermining"]
+                ppp.current_system.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                ppp.current_system.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                ppp.current_system.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
                 ppp.systems.append(ppp.current_system)
 
         case 'fsdjump':
             logger.debug("fsdjump event")
+
+            #{"timestamp":"2025-04-09T18:14:33Z","event":"FSDJump","Taxi":false,"Multicrew":false,"StarSystem":"Fusang","SystemAddress":2656177228139,"StarPos":[-12.59375,-19.03125,39.71875],"SystemAllegiance":"Federation","SystemEconomy":"$economy_HighTech;","SystemEconomy_Localised":"High Tech","SystemSecondEconomy":"$economy_Refinery;","SystemSecondEconomy_Localised":"Refinery","SystemGovernment":"$government_Democracy;","SystemGovernment_Localised":"Democracy","SystemSecurity":"$SYSTEM_SECURITY_medium;","SystemSecurity_Localised":"Medium Security","Population":4828680,"Body":"Fusang","BodyID":0,"BodyType":"Star",
+            # "ControllingPower":"Yuri Grom","Powers":["Yuri Grom","Jerome Archer"],"PowerplayState":"Fortified","PowerplayStateControlProgress":0.430706,"PowerplayStateReinforcement":9232,"PowerplayStateUndermining":273,"JumpDist":9.845,"FuelUsed":0.041981,"FuelLevel":31.958019,"Factions":[{"Name":"Fusang Fortune Commodities","FactionState":"None","Government":"Corporate","Influence":0.013225,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Fusang Focus","FactionState":"Election","Government":"Dictatorship","Influence":0.080366,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"ActiveStates":[{"State":"Election"}]},{"Name":"Liberals of Fusang","FactionState":"Boom","Government":"Democracy","Influence":0.674466,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"ActiveStates":[{"State":"Boom"},{"State":"CivilLiberty"}]},{"Name":"Fusang Society","FactionState":"None","Government":"Anarchy","Influence":0.010173,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Fusang Regulatory State","FactionState":"Election","Government":"Dictatorship","Influence":0.080366,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand1;","Happiness_Localised":"Elated","MyReputation":0.0,"ActiveStates":[{"State":"CivilLiberty"},{"State":"Election"}]},{"Name":"EG Union","FactionState":"None","Government":"Dictatorship","Influence":0.10885,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":6.70655,"RecoveringStates":[{"State":"Expansion","Trend":0}]},{"Name":"Pheonix Legion","FactionState":"None","Government":"Confederacy","Influence":0.032553,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0}],"SystemFaction":{"Name":"Liberals of Fusang","FactionState":"Boom"},"Conflicts":[{"WarType":"election","Status":"active","Faction1":{"Name":"Fusang Focus","Stake":"Marchand Military Facility","WonDays":1},"Faction2":{"Name":"Fusang Regulatory State","Stake":"Francisco de Almeida Beacon","WonDays":0}}],"EDDMapColor":-65536}
+
+            #{"timestamp":"2025-04-09T18:06:29Z","event":"FSDJump","Taxi":false,"Multicrew":false,"StarSystem":"LP 926-40","SystemAddress":422794217835,"StarPos":[-9.78125,-26.71875,45.1875],"SystemAllegiance":"Independent","SystemEconomy":"$economy_Industrial;","SystemEconomy_Localised":"Industrial","SystemSecondEconomy":"$economy_Refinery;","SystemSecondEconomy_Localised":"Refinery","SystemGovernment":"$government_Patronage;","SystemGovernment_Localised":"Patronage","SystemSecurity":"$SYSTEM_SECURITY_high;","SystemSecurity_Localised":"High Security","Population":51036582,"Body":"LP 926-40 A","BodyID":1,"BodyType":"Star",
+            # "ControllingPower":"Jerome Archer","Powers":["Yuri Grom","Jerome Archer"],"PowerplayState":"Exploited","PowerplayStateControlProgress":0.361932,"PowerplayStateReinforcement":2412,"PowerplayStateUndermining":135,"JumpDist":10.94,"FuelUsed":0.062701,"FuelLevel":31.9373,"Factions":[{"Name":"Future of LP 926-40","FactionState":"CivilWar","Government":"Democracy","Influence":0.118762,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"ActiveStates":[{"State":"CivilWar"}]},{"Name":"Party of LP 926-40","FactionState":"None","Government":"Dictatorship","Influence":0.027944,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"LP 926-40 Blue State Network","FactionState":"CivilWar","Government":"Corporate","Influence":0.118762,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"ActiveStates":[{"State":"CivilWar"}]},{"Name":"Law Party of LP 926-40","FactionState":"War","Government":"Dictatorship","Influence":0.122754,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"ActiveStates":[{"State":"War"}]},{"Name":"Knights of the Void","FactionState":"None","Government":"Patronage","Influence":0.4002,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Old Space Cowboys ABDE","FactionState":"War","Government":"Democracy","Influence":0.122754,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"PendingStates":[{"State":"Expansion","Trend":0}],"ActiveStates":[{"State":"War"}]},{"Name":"Gilgamesh Corps Orbital Protection","FactionState":"None","Government":"Dictatorship","Influence":0.088822,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":3.80893}],"SystemFaction":{"Name":"Knights of the Void"},"Conflicts":[{"WarType":"civilwar","Status":"active","Faction1":{"Name":"Future of LP 926-40","Stake":"Wei's Wandering","WonDays":0},"Faction2":{"Name":"LP 926-40 Blue State Network","Stake":"Marino Metallurgic Exchange","WonDays":0}},{"WarType":"war","Status":"active","Faction1":{"Name":"Law Party of LP 926-40","Stake":"","WonDays":0},"Faction2":{"Name":"Old Space Cowboys ABDE","Stake":"Baturin Arsenal","WonDays":0}}],"EDDMapColor":-65536}
             new_event = True
             found = False
             for sys in ppp.systems:
                 if sys.system == system:
-                    #sys.earnings += ppp.current_system.earnings
+                    sys.controlling_power = entry["ControllingPower"]
+                    sys.power_play_state = entry["PowerplayState"]
+                    sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                    sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                    sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
                     found = True
                     break
             if not found:
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
+                ppp.current_system.controlling_power = entry["ControllingPower"]
+                ppp.current_system.power_play_state = entry["PowerplayState"]
+                ppp.current_system.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                ppp.current_system.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                ppp.current_system.power_play_state_undermining = entry["PowerplayStateUndermining"]
+                ppp.current_system.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                ppp.current_system.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                ppp.current_system.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
                 ppp.systems.append(ppp.current_system)
             
         case 'died' | 'docked':
