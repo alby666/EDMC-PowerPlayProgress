@@ -1,22 +1,17 @@
-class EntryManager:
-    def __init__(self):
-        self.entries = []
+def sample_program():
+    items = []  # Initialize an empty list
+    # Add 12 items
+    for i in range(1, 13):  # Loop from 1 to 12
+        new_item = f"Item {i}"  # Create a new item (e.g., "Item 1", "Item 2", etc.)
+        
+        # Add the new item to the front of the list
+        items.insert(0, new_item)
+        
+        # Ensure the list doesn't exceed 10 items
+        if len(items) > 10:
+            items.pop()  # Remove the oldest item (last in the list)
+        
+        print(f"After adding '{new_item}': {items}")
 
-    def add_entry(self, entry: dict) -> None:
-        if isinstance(entry.get('value'), str):  # Check if the 'value' is a string
-            self.entries.append(entry['value'])
-            # Keep only the last 10 entries
-            if len(self.entries) > 10:
-                self.entries = self.entries[-10:]
-            print(f"Entry added: {entry['value']}")
-        else:
-            print("Error: Entry value must be a string.")
-
-# Example usage
-manager = EntryManager()
-for i in range(12):  # Adding 12 entries to demonstrate the behavior
-    manager.add_entry({'value': f'example{i + 1}'})
-    
-print(manager.entries)  # Will display only the last 10 entries
-
-print(manager.entries[0])
+# Run the program
+sample_program()
