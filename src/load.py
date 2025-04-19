@@ -15,6 +15,7 @@ import semantic_version  # type: ignore # noqa: N813
 import tkinter as tk
 from tkinter import ttk
 from consts import PLUGIN_NAME, plugin_version
+import myProgressBar
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
@@ -53,7 +54,7 @@ class PowerPlayProgress:
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
         #self.click_count = tk.StringVar(value=str(config.get_int('click_counter_count')))
-        self.pb: ttk.Progressbar = ttk.Progressbar()
+        self.pb: myProgressBar.ProgressBar = myProgressBar.ProgressBar()
         self.value_label: tk.Label = tk.Label()
         self.powerplay_level_label: tk.Label = tk.Label()
         self.powerplay_level_value = 0
@@ -244,7 +245,7 @@ class PowerPlayProgress:
             current_row += 1
 
         # progressbar
-        self.pb = ttk.Progressbar(
+        self.pb = myProgressBar.ProgressBar(
             self.frame,
             orient='horizontal',
             mode='determinate',

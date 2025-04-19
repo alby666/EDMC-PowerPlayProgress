@@ -4,6 +4,19 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Clean out Plugin",
+            "type": "shell",
+            "command": "del",
+            "args": [
+                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-PowerPlayProgress\\*.py"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "Copy files to target folder",
             "type": "shell",
             "command": "xcopy",
@@ -11,7 +24,6 @@
                 "${workspaceFolder}\\src",
                 "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-PowerPlayProgress",
                 "/E",
-                "/I",
                 "/Y"
             ],
             "problemMatcher": [],
@@ -54,6 +66,7 @@
             "label": "Deploy Files and Restart EDMC",
             "type": "shell",
             "dependsOn": [
+                "Clean out Plugin",
                 "Copy files to target folder",
                 "Restart EDMarketConnector"
             ],

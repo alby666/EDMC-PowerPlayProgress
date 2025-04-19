@@ -23,7 +23,7 @@ class ProgressBar(ttk.Progressbar):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._style = ttk.Style()
-        self._style.theme_create("dark_style", parent="alt", settings={
+        self._style.theme_create("elite_orange", parent="alt", settings={
             "TProgressbar": {
                 "configure": {
                     "background": "orange",
@@ -31,7 +31,7 @@ class ProgressBar(ttk.Progressbar):
                 }
             }
         })
-        self._style.theme_create("default", parent="alt", settings={
+        self._style.theme_create("elite_defautl", parent="alt", settings={
             "TProgressbar": {
                 "configure": {
                     "background": "green",
@@ -39,7 +39,7 @@ class ProgressBar(ttk.Progressbar):
                 }
             }
         })
-        self._style.theme_use("default") if config.get_int("theme") == 0 else self._style.theme_use("dark_style")
+        self._style.theme_use("elite_defautl") if config.get_int("theme") == 0 else self._style.theme_use("elite_orange")
 
     def update_theme(self):
-        self._style.theme_use("default") if config.get_int("theme") == 0 else self._style.theme_use("dark_style")
+        self._style.theme_use("elite_defautl") if config.get_int("theme") == 0 else self._style.theme_use("elite_orange")
