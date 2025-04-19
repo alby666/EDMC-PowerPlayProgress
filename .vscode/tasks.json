@@ -1,0 +1,67 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format    
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Copy files to target folder",
+            "type": "shell",
+            "command": "xcopy",
+            "args": [
+                "${workspaceFolder}\\src",
+                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-PowerPlayProgress",
+                "/E",
+                "/I",
+                "/Y"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Restart EDMarketConnector",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/.vscode/RestartEDMarketConnector.ps1"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Open EDMC Log",
+            "type": "shell",
+            "command": "notepad",
+            "args": [
+                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\logs\\EDMarketConnector-debug.log"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Deploy Files and Restart EDMC",
+            "type": "shell",
+            "dependsOn": [
+                "Copy files to target folder",
+                "Restart EDMarketConnector"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

@@ -1,32 +1,17 @@
-import tkinter as tk
+def sample_program():
+    items = []  # Initialize an empty list
+    # Add 12 items
+    for i in range(1, 13):  # Loop from 1 to 12
+        new_item = f"Item {i}"  # Create a new item (e.g., "Item 1", "Item 2", etc.)
+        
+        # Add the new item to the front of the list
+        items.insert(0, new_item)
+        
+        # Ensure the list doesn't exceed 10 items
+        if len(items) > 10:
+            items.pop()  # Remove the oldest item (last in the list)
+        
+        print(f"After adding '{new_item}': {items}")
 
-def on_enter(event):
-    alt_label.grid(row=1, column=0)
-    alt_label.lift()  # Bring the label to the front
-
-def on_leave(event):
-    alt_label.grid_forget()
-
-# Create the main window
-root = tk.Tk()
-root.title("Hover Example")
-root.geometry("300x200")
-
-# Create a frame to organize widgets
-frame = tk.Frame(root)
-frame.grid(row=0, column=0, padx=50, pady=50)
-
-# Create the primary label
-label = tk.Label(frame, text="Hover over me!", font=("Arial", 14))
-label.grid(row=0, column=0)
-
-# Create the alternate label
-alt_label = tk.Label(frame, text="Hello, I am an alternate label!", bg="lightyellow", font=("Arial", 10))
-alt_label.grid_forget()  # Start hidden
-
-# Bind hover events to the primary label
-label.bind("<Enter>", on_enter)
-label.bind("<Leave>", on_leave)
-
-# Run the application
-root.mainloop()
+# Run the program
+sample_program()
