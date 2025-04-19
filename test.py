@@ -1,22 +1,28 @@
-class EntryManager:
-    def __init__(self):
-        self.entries = []
+import tkinter as tk
+from tkinter import ttk
 
-    def add_entry(self, entry: dict) -> None:
-        if isinstance(entry.get('value'), str):  # Check if the 'value' is a string
-            self.entries.append(entry['value'])
-            # Keep only the last 10 entries
-            if len(self.entries) > 10:
-                self.entries = self.entries[-10:]
-            print(f"Entry added: {entry['value']}")
-        else:
-            print("Error: Entry value must be a string.")
+def change_color():
+    style.configure("green.Horizontal.TProgressbar", background="orange", troughcolor="white")
 
-# Example usage
-manager = EntryManager()
-for i in range(12):  # Adding 12 entries to demonstrate the behavior
-    manager.add_entry({'value': f'example{i + 1}'})
-    
-print(manager.entries)  # Will display only the last 10 entries
+# Create the main window
+root = tk.Tk()
+root.title("Tkinter Progress Bar")
 
-print(manager.entries[0])
+# Define the style
+style = ttk.Style(root)
+style.theme_use('default')
+style.configure("green.Horizontal.TProgressbar", background="green", troughcolor="white")
+
+# Create a progress bar with the custom style
+progress = ttk.Progressbar(root, style="green.Horizontal.TProgressbar", orient="horizontal", length=300, mode="determinate")
+progress.pack(pady=20)
+
+# Set progress bar value
+progress['value'] = 50  # Example value
+
+# Create a button to change color
+button = tk.Button(root, text="Change to Orange", command=change_color)
+button.pack(pady=10)
+
+# Start the Tkinter event loop
+root.mainloop()
