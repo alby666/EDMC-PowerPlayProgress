@@ -14,113 +14,18 @@ import semantic_version  # type: ignore # noqa: N813
 
 import tkinter as tk
 from tkinter import ttk
+from consts import PLUGIN_NAME, plugin_version
+from recentjournal import RecentJournal
+from sessionprogress import SessionProgress
+from socials import Socials
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
-from config import appname, config # type: ignore # noqa: N813
+from config import appname # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from theme import theme # type: ignore # noqa: N813
 
-# This **MUST** match the name of the folder the plugin is in.
-PLUGIN_NAME: str = 'PowerPlayProgress'
-plugin_version: str = '0.9.4'
-
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
-
-class SessionProgress(object):
-    
-    class Commodities(object):
-        """
-        Represents the commodities collected and delivered in a single session.
-        By type and delivered system.
-        """
-        def __init__(self, type='', type_localised='', delivered_system='', collected=0, delivered=0) -> None:
-            self.type = type
-            self.type_localised = type_localised
-            self.delivered_system = delivered_system
-            self.collected = int(collected)
-            self.delivered = int(delivered)
-    
-    """
-    Represents the progress in a single session i.e. from the last dock to the current dock or death.
-    """
-    def __init__(self, earned_merits=0, time=0, 
-                 is_docking_event=0, power_play_rank=0, power_play='') -> None:
-        self.earned_merits = int(earned_merits)
-        self.time = int(time)
-        self.is_docking_event = int(is_docking_event)
-        self.power_play_rank = int(power_play_rank)
-        self.power_play = power_play
-        self.commodities: list[SessionProgress.Commodities] = []
-        self.commodities_delivered_systems: list[str] = []
-        self.commodities_delivered_types: list[str] = []
-
-    @property
-    def total_commodities_collected(self):
-        total = 0
-        for c in self.commodities:
-            total += c.collected
-        return total
-
-    @property
-    def total_commodities_delivered(self):
-        total = 0
-        for c in self.commodities:
-            total += c.delivered
-        return total
-
-    def total_commodities_delivered_by_system(self, delivered_system: str):
-        total = 0
-        for c in self.commodities:
-            if c.delivered_system == delivered_system:
-                total += c.delivered
-        return total
-
-    def total_commodities_delivered_by_type(self, type_localised: str):
-        total = 0
-        for c in self.commodities:
-            if c.type_localised == type_localised:
-                total += c.delivered
-        return total
-
-    def add_commodity(self, commodity: Commodities) -> None:
-        """
-        Add a commodity to the session.
-        """
-        found = False
-        for c in self.commodities:
-            if c.type == commodity.type and c.delivered_system == commodity.delivered_system:
-                # If the commodity is found, update the collected and delivered values
-                c.collected += commodity.collected
-                c.delivered += commodity.delivered
-                found = True
-                break
-        if not found:
-            # If the commodity is not found, append it to the list
-            self.commodities.append(commodity)
-
-        if commodity.delivered > 0:
-            # If the commodity is collected, append it to the list
-            found = False
-            for sys in self.commodities_delivered_systems:
-                if sys == commodity.delivered_system:
-                    found = True
-                    break
-            if not found:
-                # If the commodity is not found, append it to the list
-                self.commodities_delivered_systems.append(commodity.delivered_system)
-                logger.debug(f"Commodity delivered system: {commodity.delivered_system}")
-
-            found = False
-            for typ in self.commodities_delivered_types:
-                if typ == commodity.type_localised:
-                    found = True
-                    break
-            if not found:
-                # If the commodity is not found, append it to the list
-                self.commodities_delivered_types.append(commodity.type_localised)
-                logger.debug(f"Commodity delivered type: {commodity.type_localised}")
-
 
 class SystemProgress(object):
     """
@@ -147,7 +52,7 @@ class PowerPlayProgress:
 
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
-        self.click_count = tk.StringVar(value=str(config.get_int('click_counter_count')))
+        #self.click_count = tk.StringVar(value=str(config.get_int('click_counter_count')))
         self.pb: ttk.Progressbar = ttk.Progressbar()
         self.value_label: tk.Label = tk.Label()
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -167,6 +72,8 @@ class PowerPlayProgress:
         self.powerplay_commodities_label = tk.Label()
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
+        self.recent_journal_log: RecentJournal = RecentJournal()
+        self.flex_row = 7
         logger.info("PowerPlayProgress instantiated")
 
     def on_load(self) -> str:
@@ -345,14 +252,21 @@ class PowerPlayProgress:
         )
         # place the progressbar
         self.pb.grid(column=0, row=current_row, columnspan=3)
-        self.pb['value'] = self.click_count.get()
+        self.pb['value'] = 50
 
         # progress label
-        self.value_label = tk.Label(self.frame, text=self.click_count.get()+' %', font=("Arial", 8))
-
-        # Resize by adjusting font and move 2 pixels down with 'pady'
+        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8))
         self.value_label.grid(column=0, row=current_row, columnspan=2)  # Top padding: 2 pixels
         current_row += 1
+
+        #Socials
+        if self.current_session.power_play != '':
+            links = Socials.GetLinks(self.current_session.power_play)
+            socials_link_reddit = HyperlinkLabel(self.frame, text=f"Reddit", foreground="blue", cursor="hand2", url=links['reddit'])
+            socials_link_discord = HyperlinkLabel(self.frame, text=f"Discord", foreground="blue", cursor="hand2", url=links['discord'])
+            socials_link_reddit.grid(row=current_row, column=0, sticky="W")
+            socials_link_discord.grid(row=current_row, column=1, sticky="W")
+            current_row += 1
 
         self.total_merits_label = tk.Label(self.frame, text=f"Total Merits: 345345")
         self.total_merits_label.grid(row=current_row, column=0, sticky=tk.W)
@@ -371,6 +285,7 @@ class PowerPlayProgress:
         self.merits_by_systems_label = tk.Label(self.frame, text="Merits by Systems:")
         self.merits_by_systems_label.grid(row=current_row, column=0, sticky="w")        
         current_row += 1
+        self.flex_row = current_row
 
         self.powerplay_commodities_label = tk.Label(self.frame, text="PowerPlay Commodities (collected/delivered): 34/56")
         self.powerplay_commodities_label.grid(row=current_row, column=0, sticky="w")
@@ -420,11 +335,16 @@ class PowerPlayProgress:
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
-        self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{round(self.total_merits, 0)}")
+        
+        total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
+        self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
+
         total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
         self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
+        
         total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
         self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
+        
         total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
         self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
         
@@ -433,7 +353,7 @@ class PowerPlayProgress:
             lbl.destroy()
         self.power_play_list_labels.clear()
 
-        cur_row = 7
+        cur_row = self.flex_row
         self.merits_by_systems_label.grid(row=cur_row)
         cur_row += 1
         for sys in self.systems:
@@ -462,10 +382,11 @@ class PowerPlayProgress:
                     undermining_state_change = ' U\u2194'
 
                 lbl = None
+                total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
                 if sys.controlling_power != '':
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{round(sys.earnings, 0)} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
+                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
                 else:
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{round(sys.earnings, 0)}")
+                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
                 theme.register(lbl)
                 self.power_play_list_labels.append(lbl)
@@ -503,6 +424,19 @@ class PowerPlayProgress:
                         theme.register(lbl)
                         cur_row += 1
 
+        lbl = tk.Label(self.frame, text=f"Merits by Activity:")
+        lbl.grid(row=cur_row, column=0, sticky="w")
+        self.power_play_list_labels.append(lbl)
+        cur_row += 1
+        for act in self.current_session.activities.activities:
+            if act.merits > 0: 
+                tab_spacing = '\t' if len(act.activity_type) < 10 else ''
+                lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
+                lbl.grid(row=cur_row, column=0, sticky="w")
+                self.power_play_list_labels.append(lbl)
+                theme.register(lbl)
+                cur_row += 1
+            
         self.copy_button.grid(row=cur_row)
         cur_row += 1
         theme.update(self.frame)
@@ -590,6 +524,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
     locale.setlocale(locale.LC_ALL, '')
     new_event = False
+    ppp.recent_journal_log.add_entry(entry)
     event_type = entry['event'].lower()
     match event_type:
 
@@ -606,20 +541,21 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             for sys in ppp.systems:
                 if sys.system == system:
                     sys.earnings += ppp.current_system.earnings
-                    if sys.controlling_power == '':
+                    if sys.controlling_power == '' and entry.get("ControllingPower", "") != "":
                         # If the system is found, set the original values as some scenarios it is possible to have a location event before a fsdjump event.
                         sys.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
                         sys.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
                         sys.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
-                    sys.controlling_power = entry["ControllingPower"]
-                    sys.power_play_state = entry["PowerplayState"]
-                    sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
-                    sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
-                    sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
+                    if entry.get("ControllingPower", "") != "":
+                        sys.controlling_power = entry["ControllingPower"]
+                        sys.power_play_state = entry["PowerplayState"]
+                        sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                        sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                        sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
                     found = True
                     break
-            if not found:
-                logger.debug(f"System not found: {system}")
+            if not found and entry.get("ControllingPower", "") != "":
+                logger.debug(f"System not found: {system} {entry}")
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
@@ -645,25 +581,27 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             found = False
             for sys in ppp.systems:
                 if sys.system == system:
-                    sys.controlling_power = entry["ControllingPower"]
-                    sys.power_play_state = entry["PowerplayState"]
-                    sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
-                    sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
-                    sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
+                    if (entry.get("ControllingPower", "") != ""):
+                        sys.controlling_power = entry["ControllingPower"]
+                        sys.power_play_state = entry["PowerplayState"]
+                        sys.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
+                        sys.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
+                        sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
                     found = True
                     break
-            if not found:
+            #If its a new system and it has a controlling power otherwise there is no power play to track
+            if (not found) and (entry.get("ControllingPower", "") != ""):
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
-                ppp.current_system.controlling_power = entry["ControllingPower"]
-                ppp.current_system.power_play_state = entry["PowerplayState"]
-                ppp.current_system.power_play_state_control_progress = entry["PowerplayStateControlProgress"]
-                ppp.current_system.power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
-                ppp.current_system.power_play_state_undermining = entry["PowerplayStateUndermining"]
-                ppp.current_system.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
-                ppp.current_system.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
-                ppp.current_system.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
+                ppp.current_system.controlling_power = entry.get("ControllingPower", "")
+                ppp.current_system.power_play_state = entry.get("PowerplayState", "")
+                ppp.current_system.power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
+                ppp.current_system.power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
+                ppp.current_system.power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
+                ppp.current_system.orig_power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
+                ppp.current_system.orig_power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
+                ppp.current_system.orig_power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
                 ppp.systems.append(ppp.current_system)
             
         case 'died' | 'docked':
@@ -683,6 +621,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             ppp.current_session.commodities = ppp.previous_session.commodities
             ppp.current_session.commodities_delivered_systems = ppp.previous_session.commodities_delivered_systems
             ppp.current_session.commodities_delivered_types = ppp.previous_session.commodities_delivered_types
+            ppp.current_session.activities = ppp.previous_session.activities
 
         #"PowerplayCollect"
         #"PowerplayDeliver"
@@ -717,11 +656,8 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             if ppp.current_session.power_play == '':
                 ppp.current_session.power_play = entry["Power"]
                 ppp.current_session.power_play_rank = ppp.CurrentRank(entry["TotalMerits"])
-                ppp.powerplay_level_label.config(text=f"PowerPlay Level: {ppp.current_session.power_play_rank} -> {ppp.current_session.power_play_rank + 1}", justify=tk.CENTER)
                 ppp.starting_merits = int(entry["TotalMerits"]) - int(entry["MeritsGained"])
-                ppp.total_merits = int(entry["TotalMerits"])
-                ppp.pb['value'] = round((ppp.starting_merits - ppp.CurrentRankLowerBound(ppp.current_session.power_play_rank)) / ppp.NextRankDifference(ppp.current_session.power_play_rank) * 100, 2)
-                ppp.value_label.config(text=str(ppp.pb['value'])+' %')    
+                ppp.total_merits = int(entry["TotalMerits"])  
 
                 if system != '':
                     ppp.current_system = SystemProgress()
@@ -729,12 +665,21 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                     ppp.current_system.earnings = 0
                     ppp.systems.append(ppp.current_system)
 
+            #Record the merits gained
             ppp.current_session.earned_merits += entry["MeritsGained"]
-            ppp.total_merits = entry["TotalMerits"]
+            ppp.total_merits = int(entry["TotalMerits"])
+            #Apportion the merits to the appropriate system
             for sys in ppp.systems:
                 if sys.system == system:
                     sys.earnings += entry["MeritsGained"]
                     break
+
+            #Assign merits to appropriate activity...
+            if ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isDonationMission: ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isUnknown: ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
 
         case 'powerplayrank':
             logger.debug("PowerplayRank event")
@@ -747,12 +692,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-03-23T08:39:26Z","event":"Powerplay","Power":"Jerome Archer","Rank":138,"Merits":1084487,"TimePledged":12319106}
             new_event = True
             ppp.current_session.power_play = entry["Power"]
-            ppp.current_session.power_play_rank = entry["Rank"]
-            ppp.powerplay_level_label.config(text=f"PowerPlay Level: {entry['Rank']} -> {int(entry['Rank']) + 1}", justify=tk.CENTER)
-            ppp.starting_merits = entry["Merits"]
-            ppp.total_merits = entry["Merits"]
-            ppp.pb['value'] = round((ppp.starting_merits - ppp.CurrentRankLowerBound(ppp.current_session.power_play_rank)) / ppp.NextRankDifference(ppp.current_session.power_play_rank) * 100, 2)
-            ppp.value_label.config(text=str(ppp.pb['value'])+' %')
+            ppp.current_session.power_play_rank = int(entry["Rank"])
+            ppp.starting_merits = int(entry["Merits"])
+            ppp.total_merits = int(entry["Merits"])
 
             logger.debug(
                     f'cmdr = "{cmdrname}", power = "{entry["Power"]}"'

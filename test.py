@@ -1,32 +1,22 @@
-import tkinter as tk
+class EntryManager:
+    def __init__(self):
+        self.entries = []
 
-def on_enter(event):
-    alt_label.grid(row=1, column=0)
-    alt_label.lift()  # Bring the label to the front
+    def add_entry(self, entry: dict) -> None:
+        if isinstance(entry.get('value'), str):  # Check if the 'value' is a string
+            self.entries.append(entry['value'])
+            # Keep only the last 10 entries
+            if len(self.entries) > 10:
+                self.entries = self.entries[-10:]
+            print(f"Entry added: {entry['value']}")
+        else:
+            print("Error: Entry value must be a string.")
 
-def on_leave(event):
-    alt_label.grid_forget()
+# Example usage
+manager = EntryManager()
+for i in range(12):  # Adding 12 entries to demonstrate the behavior
+    manager.add_entry({'value': f'example{i + 1}'})
+    
+print(manager.entries)  # Will display only the last 10 entries
 
-# Create the main window
-root = tk.Tk()
-root.title("Hover Example")
-root.geometry("300x200")
-
-# Create a frame to organize widgets
-frame = tk.Frame(root)
-frame.grid(row=0, column=0, padx=50, pady=50)
-
-# Create the primary label
-label = tk.Label(frame, text="Hover over me!", font=("Arial", 14))
-label.grid(row=0, column=0)
-
-# Create the alternate label
-alt_label = tk.Label(frame, text="Hello, I am an alternate label!", bg="lightyellow", font=("Arial", 10))
-alt_label.grid_forget()  # Start hidden
-
-# Bind hover events to the primary label
-label.bind("<Enter>", on_enter)
-label.bind("<Leave>", on_leave)
-
-# Run the application
-root.mainloop()
+print(manager.entries[0])
