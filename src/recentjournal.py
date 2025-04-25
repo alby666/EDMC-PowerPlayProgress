@@ -19,13 +19,13 @@ High Value Commodities	        Sell trade commodities at 40% or higher
 Holoscreen hacking	            Holoscreen hacking at ports	                                                                                                    Y       
 Low Value Commodities	        Sell commodities worth less than 500cr per ton	
 Mined Commodities	            Sell mined items (not bought minable items)	
-Rare Goods	                    Sell rare goods not aquired in aquisition systems	
-Rare Goods	                    Sell rare goods not aquired in Reinforcement system	
+Rare Goods	                    Sell rare goods not aquired in aquisition systems                                                                               Y	
+Rare Goods	                    Sell rare goods not aquired in Reinforcement system	                                                                            Y      
 Retrieve Power items	        (Ody) Retreive specific items from Power containers	
-Salvage	                        Collect escape pods in Undermining systems	
-Salvage	                        Collect Escape pods, take to Stronhold or Fortified systems	
-Salvage	                        collect salvage and hand in to Power Contact in same Reinforcement system
-Salvage	                        Hand in salvage collected in Unermining systems	
+Salvage	                        Collect escape pods in Undermining systems	                                                                                    Y      
+Salvage	                        Collect Escape pods, take to Stronhold or Fortified systems	                                                                    Y   
+Salvage	                        collect salvage and hand in to Power Contact in same Reinforcement system                                                       Y
+Salvage	                        Hand in salvage collected in Unermining systems	                                                                                Y     
 Scan datalinks	                Scan datalinks at Megaships	                                                                                                    Y
 Scan datalinks	                Scan datalinks at megaships in Undermining systems                                                                              Y	
 Ship scans	                    Scan ships and wakes with built-in scanner	                                                                                    Y
@@ -65,6 +65,8 @@ class RecentJournal:
         "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium", 
     }
 
+    salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
+
     HISTORY_DEPTH: int = 10
 
     def __init__(self) -> None:
@@ -80,7 +82,7 @@ class RecentJournal:
 
     @property
     def isScan(self) -> bool:
-        logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) < 3:
             return False
         else:
@@ -104,7 +106,7 @@ class RecentJournal:
     
     @property
     def isPowerPlayDelivery(self) -> bool:
-        logger.debug(f"isPowerPlayDelivery recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isPowerPlayDelivery recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) < 3:
             return False
         else:
@@ -154,6 +156,15 @@ class RecentJournal:
                 ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
                     or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isSalvage(self) -> bool:
+        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[1].get("Name", "") in self.salvage_types)
+                    or (self.__journal_entries_log[2].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[2].get("Name", "") in self.salvage_types)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
 
     @property
     def isUnknown(self) -> bool:
