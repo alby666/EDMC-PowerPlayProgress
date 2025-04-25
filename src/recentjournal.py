@@ -1,9 +1,9 @@
 """
 Type	                        Activity	                                                                                                                Implemented
 Aid & Donation Missions	        Complete aid and humanitarian missions	                                                                                        Y (Donations)
-Bounty Hunting	                Bounty Hunting	
-Bounty Hunting	                Kill enemies	
-Bounty Hunting	                Power kills - kill enemies in aquisition systems	
+Bounty Hunting	                Bounty Hunting		                                                                                                            Y
+Bounty Hunting	                Kill enemies	                                                                                                                Y                                       
+Bounty Hunting	                Power kills - kill enemies in aquisition systems		                                                                        Y
 Cartography	                    Sell Cartography data at Universal Cartographics	
 Commit Crimes	                Commit Crimes in Undermining systems	
 Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	
@@ -16,7 +16,7 @@ Download data	                (Ody) Download Power Classified data from settleme
 Download data	                (Ody) Download Power research/Industrial data from settlements in aquisition, return to stronghold/fortified
 Exobiology	                    turn in exobiology data to Power Contact in Reinforcement system	
 High Value Commodities	        Sell trade commodities at 40% or higher	
-Holoscreen hacking	            Holoscreen hacking at ports	
+Holoscreen hacking	            Holoscreen hacking at ports	                                                                                                    Y       
 Low Value Commodities	        Sell commodities worth less than 500cr per ton	
 Mined Commodities	            Sell mined items (not bought minable items)	
 Rare Goods	                    Sell rare goods not aquired in aquisition systems	
@@ -26,8 +26,8 @@ Salvage	                        Collect escape pods in Undermining systems
 Salvage	                        Collect Escape pods, take to Stronhold or Fortified systems	
 Salvage	                        collect salvage and hand in to Power Contact in same Reinforcement system
 Salvage	                        Hand in salvage collected in Unermining systems	
-Scan datalinks	                Scan datalinks at Megaships	
-Scan datalinks	                Scan datalinks at megaships in Undermining systems	
+Scan datalinks	                Scan datalinks at Megaships	                                                                                                    Y
+Scan datalinks	                Scan datalinks at megaships in Undermining systems                                                                              Y	
 Ship scans	                    Scan ships and wakes with built-in scanner	                                                                                    Y
 Upload data	                    (Ody) Upload powerplay malware	
 """
@@ -44,6 +44,26 @@ class RecentJournal:
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
              "hulldamage", "repairall", "repair", "missionaccepted"}
+
+    rare_goods = {
+        "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
+        "chameleoncloth", "onionheadalphastrain", "wolffesh", "hipprotosquid", "momusbogspaniel", "taurichimes", "fujintea", "ethgrezeteabuds", "esusekucaviar", "zeesszeantgrubglue", 
+        "azcancriformula42", "witchhaulkobebeef", "eraninpearlwhisky", "pantaaprayersticks", "konggaale", "tiegfriessynthsilk", "voidextractcoffee", "vherculisbodyrub", "vegaslimweed", 
+        "honestypills", "haidenblackbrew", "nanomedicines", "bankiamphibiousleather", "chateaudeaegaeon", "aganipperush", "thehuttonmug", "centaurimegagin", "altairianskin", 
+        "cherbonesbloodcrystals", "jotunmookah", "gilyasignatureweapons", "indibourbon", "havasupaidreamcatcher", "buckyballbeermats", "hip10175bushmeat", "ochoengchillies", 
+        "ophiuchexinoartefacts", "mechucoshightea", "pavoniseargrubs", "crystallinespheres", "lyraeweed", "hiporganophosphates", "borasetanipathogenetics", "volkhabbeedrones", 
+        "wulpahyperboresystems", "motronaexperiencejelly", "lucanonionhead", "tanmarktranquiltea", "onionhead", "tarachspice", "masterchefs", "xihebiomorphiccompanions", "mulachigiantfungus", 
+        "tiolcewaste2pasteunits", "neritusberries", "chieridanimarinepaste", "ltthypersweet", "medbstarlube", "alyabodysoap", "galactictravelguide", "cromsilverfesh", "duradrives", 
+        "alacarakmoskinart", "rajukrumultistoves", "cetirabbits", "aepyornisegg", "ngunamodernantiques", "mokojingbeastfeast", "thewatersofshintara", "ultracompactprocessorprototypes", 
+        "kachiriginfilterleeches", "utgaroarmillennialeggs", "helvetitjpearls", "ceremonialheiketea", "vidavantianlace", "bakedgreebles", "harmasilversearum", "noneuclidianexotanks", 
+        "jaradharrepuzzlebox", "coquimspongiformvictuals", "onionheadbetastrain", "albinoquechuamammothmeat", "karetiicouture", "platinumalloy", "korokungpellets", "aroucaconventualsweets", 
+        "kamorinhistoricweapons", "belalansrayleather", "mukusubiichitinos", "cd75kittenbrandcoffee", "shanscharisorchid", "vanayequiceratomorphafur", "eleuthermals", "apavietii", 
+        "deuringastruffles", "hip118311swarm", "giantverrix", "azuremilk", "leestianeviljuice", "disomacorn", "uszaiantreegrub", "baltahsinevacuumkrill", "lavianbrandy", "orrerianviciousbrew",
+        "leatheryeggs", "anynacoffee", "deltaphoenicispalms", "personalgifts", "edenapplesofaerial", "hr7221wheat", "yasokondileaf", "holvaduellingblades", "anduligafireworks", "burnhambiledistillate", 
+        "kinagoviolins", "ngadandarifireopals", "rapabaosnakeskins", "toxandjivirocide", "kamitracigars", "wuthielokufroth", "sanumadecorativemeat", "geawendancedust", "jarouarice", "giantirukamasnails", 
+        "classifiedexperimentalequipment", "njangarisaddles", "soontillrelics", "gomanyauponcoffee", "karsukilocusts", "eshuumbrellas", "wheemetewheatcakes", "sothiscrystallinegold", 
+        "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium", 
+    }
 
     HISTORY_DEPTH: int = 10
 
@@ -112,8 +132,31 @@ class RecentJournal:
                         and self.__journal_entries_log[1].get("Name", "") == "Mission_AltruismCredits_name")
     
     @property
+    def isScanDataLinks(self) -> bool:
+        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "DataScanned" and self.__journal_entries_log[1].get("Type", "") == "$Datascan_ShipUplink;")
+                    or (self.__journal_entries_log[2].get("event", "") == "DataScanned" and self.__journal_entries_log[2].get("Type", "") == "$Datascan_ShipUplink;"))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        
+    @property
+    def isHoloscreenHack(self) -> bool:
+        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "HoloscreenHacked"
+                    or self.__journal_entries_log[2].get("event", "") == "HoloscreenHacked")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isRareGoods(self) -> bool:
+        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
+                    or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
     def isUnknown(self) -> bool:
         logger.debug(f"Unknown: {self.__journal_entries_log}")
         #will eventually need a number of NOT ORs here
         return (not self.isScan and not self.isBounty and not self.isPowerPlayDelivery)
-    

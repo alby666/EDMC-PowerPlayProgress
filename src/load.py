@@ -359,7 +359,7 @@ class PowerPlayProgress:
         cur_row += 1
         for sys in self.systems:
             if sys.earnings > 0:
-                tab_spacing = '\t' if len(sys.system) < 7 else ''
+                tab_spacing = '\t' if len(sys.system) < 12 else ''
                 control_state_change = ''
                 if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
                     control_state_change = ' C\u2191' # Up arrow, increasing
@@ -431,7 +431,7 @@ class PowerPlayProgress:
         cur_row += 1
         for act in self.current_session.activities.activities:
             if act.merits > 0: 
-                tab_spacing = '\t' if len(act.activity_type) < 10 else ''
+                tab_spacing = '\t' if len(act.activity_type) < 12 else ''
                 lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
                 lbl.grid(row=cur_row, column=0, sticky="w")
                 self.power_play_list_labels.append(lbl)
@@ -681,6 +681,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
             #Donations handled by the MissionCompleted event
             #elif ppp.recent_journal_log.isDonationMission: ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isScanDataLinks: ppp.current_session.activities.add_scan_data_links_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
             else: ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
 
             ppp.last_merits_gained = entry["MeritsGained"]
@@ -711,7 +714,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.systems.append(ppp.current_system)
 
         case 'missioncompleted':
-            # need to check for this for domation missions as they complete after the merits are awarded
+            # need to check for this for donation missions as they potnetially complete after the merits are awarded
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
