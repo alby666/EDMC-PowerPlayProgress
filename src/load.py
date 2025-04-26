@@ -21,7 +21,7 @@ from socials import Socials
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
-from config import appname # type: ignore # noqa: N813
+from config import appname, config # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from theme import theme # type: ignore # noqa: N813
 
@@ -52,7 +52,16 @@ class PowerPlayProgress:
 
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
-        #self.click_count = tk.StringVar(value=str(config.get_int('click_counter_count')))
+        #Preferences declarations
+        self.options_view_totals = tk.BooleanVar(value=bool(config.get_bool('options_view_totals', default=True)))
+        self.options_view_merits_by_systems = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_systems', default=True)))
+        self.options_view_merits_by_activities = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_activities', default=True)))
+        self.options_view_detail_mined_commodities = tk.BooleanVar(value=bool(config.get_bool('options_view_detail_mined_commodities', default=True)))
+        self.options_view_powerplay_commodities = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities', default=True)))
+        self.options_view_powerplay_commodities_by_type = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_type', default=True)))
+        self.options_view_powerplay_commodities_by_system = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_system', default=True)))
+        self.options_view_export_format = tk.StringVar(value=config.get('options_view_export_format', default='Text'))
+
         self.pb: ttk.Progressbar = ttk.Progressbar()
         self.value_label: tk.Label = tk.Label()
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -106,13 +115,41 @@ class PowerPlayProgress:
         :param is_beta: Whether or not EDMC is currently marked as in beta mode
         :return: The frame to add to the settings window
         """
-        #current_row = 0
         frame = nb.Frame(parent)
 
-        # setup our config in a "Click Count: number"
-        #nb.Label(frame, text='Click Count').grid(row=current_row)
-        #nb.EntryMenu(frame, textvariable=self.click_count).grid(row=current_row, column=1)
-        #current_row += 1  # Always increment our row counter, makes for far easier tkinter design.
+        display_options_frame = ttk.LabelFrame(frame, text="Display Options", padding=(10, 10))
+        display_options_frame.grid(row=0, padx=10, pady=10, sticky="nsew")
+
+        totals_options_frame = ttk.LabelFrame(display_options_frame, text="Totals options", padding=(10, 10))
+        totals_options_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
+        activities_options_frame = ttk.LabelFrame(display_options_frame, text="Activities options", padding=(10, 10))
+        activities_options_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
+        powerplay_options_frame = ttk.LabelFrame(display_options_frame, text="Powerplay Commodity Options", padding=(10, 10))
+        powerplay_options_frame.grid(row=1, column=2, padx=10, pady=10, sticky="nsew")
+
+        export_options_frame = ttk.LabelFrame(display_options_frame, text="Copy Progress Options", padding=(10, 10))
+        export_options_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        # Add checkboxes and labels to the frame, aligning the checkboxes to the right
+        def add_checkbox(lblFrame, row, text, lblsticky, variable):
+            label = tk.Label(lblFrame, text=text, anchor="w")
+            label.grid(row=row, column=0, padx=5, pady=2, sticky=lblsticky)
+            checkbox = tk.Checkbutton(lblFrame, variable=variable)
+            checkbox.grid(row=row, column=1, padx=5, pady=2, sticky="w")
+
+        add_checkbox(totals_options_frame, 1, "Totals", "w", self.options_view_totals)
+        add_checkbox(totals_options_frame, 2, "Merits by Systems","w", self.options_view_merits_by_systems)
+        add_checkbox(activities_options_frame, 0, "Merits by Activities","w", self.options_view_merits_by_activities)
+        add_checkbox(activities_options_frame, 1, "Detail mined commodities", "e", self.options_view_detail_mined_commodities)
+        add_checkbox(powerplay_options_frame, 0, "Powerplay commodities", "w", self.options_view_powerplay_commodities)
+        add_checkbox(powerplay_options_frame, 1, "By type", "e", self.options_view_powerplay_commodities_by_type)
+        add_checkbox(powerplay_options_frame, 2, "By system", "e", self.options_view_powerplay_commodities_by_system)
+
+        tk.Label(export_options_frame, text="Format:").grid(row=0, column=0, padx=5, pady=2, sticky="w")
+        tk.Radiobutton(export_options_frame, text="Text", variable=self.options_view_export_format, value="Text").grid(row=0, column=1, padx=5, pady=2, sticky="w")
+        tk.Radiobutton(export_options_frame, text="Discord", variable=self.options_view_export_format, value="Discord").grid(row=0, column=2, padx=5, pady=2, sticky="w")
         return frame
 
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
@@ -126,7 +163,15 @@ class PowerPlayProgress:
         """
         # You need to cast to `int` here to store *as* an `int`, so that
         # `config.get_int()` will work for re-loading the value.
-        #config.set('click_counter_count', int(self.click_count.get()))
+        config.set('options_view_totals', bool(self.options_view_totals.get()))
+        config.set('options_view_merits_by_systems', bool(self.options_view_merits_by_systems.get()))
+        config.set('options_view_merits_by_activities', bool(self.options_view_merits_by_activities.get()))
+        config.set('options_view_detail_mined_commodities', bool(self.options_view_detail_mined_commodities.get()))
+        config.set('options_view_powerplay_commodities', bool(self.options_view_powerplay_commodities.get()))
+        config.set('options_view_powerplay_commodities_by_type', bool(self.options_view_powerplay_commodities_by_type.get()))
+        config.set('options_view_powerplay_commodities_by_system', bool(self.options_view_powerplay_commodities_by_system.get()))
+        config.set('options_view_export_format', str(self.options_view_export_format.get()))
+        self.Update_Ppp_Display()
 
     def NextRankDifference(self, currentRank: int) -> int:
         """
@@ -319,13 +364,6 @@ class PowerPlayProgress:
         """
         logger.debug("Update_Ppp_Display event")
 
-        self.pb.grid()
-        self.value_label.grid()  
-        self.total_merits_label.grid()
-        self.total_session_merits.grid()
-        self.total_since_merits.grid()
-        self.total_prev_merits.grid()
-        
         # Get the system's default locale
         default_locale = locale.getlocale()
         # Set the locale to the system's default
@@ -333,21 +371,33 @@ class PowerPlayProgress:
         #localized_string = locale.format_string("%d", number, grouping=True)
 
         ## Update the progress bar and label with the current session data
+        self.pb.grid()
+        self.value_label.grid()  
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
         
-        total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
-        self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
+        if self.options_view_totals.get():
+            self.total_merits_label.grid()
+            self.total_session_merits.grid()
+            self.total_since_merits.grid()
+            self.total_prev_merits.grid()
+            total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
+            self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
 
-        total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
-        self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
-        
-        total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
-        self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
-        
-        total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
-        self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
+            total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
+            self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
+            
+            total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
+            self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
+            
+            total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
+            self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
+        else:
+            self.total_merits_label.grid_remove()
+            self.total_session_merits.grid_remove()
+            self.total_since_merits.grid_remove()
+            self.total_prev_merits.grid_remove()
         
         ## Remove the previous labels from the list and destroy them
         for lbl in self.power_play_list_labels:
@@ -355,88 +405,94 @@ class PowerPlayProgress:
         self.power_play_list_labels.clear()
 
         cur_row = self.flex_row
-        self.merits_by_systems_label.grid(row=cur_row)
-        cur_row += 1
-        for sys in self.systems:
-            if sys.earnings > 0:
-                tab_spacing = '\t' if len(sys.system) < 12 else ''
-                control_state_change = ''
-                if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
-                    control_state_change = ' C\u2191' # Up arrow, increasing
-                elif sys.power_play_state_control_progress < sys.orig_power_play_state_control_progress:
-                    control_state_change = ' C\u2193' # Down arrow, decreasing
-                else:
-                    control_state_change = ' C\u2194' # Left-right arrow, no change
-                reinforcement_state_change = ''
-                if sys.power_play_state_reinforcement > sys.orig_power_play_state_reinforcement:
-                    reinforcement_state_change = ' R\u2191'
-                elif sys.power_play_state_reinforcement < sys.orig_power_play_state_reinforcement:
-                    reinforcement_state_change = ' R\u2193'
-                else:
-                    reinforcement_state_change = ' R\u2194'
-                undermining_state_change = ''
-                if sys.power_play_state_undermining > sys.orig_power_play_state_undermining:
-                    undermining_state_change = ' U\u2191'
-                elif sys.power_play_state_undermining < sys.orig_power_play_state_undermining:
-                    undermining_state_change = ' U\u2193'
-                else:
-                    undermining_state_change = ' U\u2194'
+        if self.options_view_merits_by_systems.get():
+            self.merits_by_systems_label.grid(row=cur_row)
+            cur_row += 1
+            for sys in self.systems:
+                if sys.earnings > 0:
+                    tab_spacing = '\t' if len(sys.system) < 12 else ''
+                    control_state_change = ''
+                    if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
+                        control_state_change = ' C\u2191' # Up arrow, increasing
+                    elif sys.power_play_state_control_progress < sys.orig_power_play_state_control_progress:
+                        control_state_change = ' C\u2193' # Down arrow, decreasing
+                    else:
+                        control_state_change = ' C\u2194' # Left-right arrow, no change
+                    reinforcement_state_change = ''
+                    if sys.power_play_state_reinforcement > sys.orig_power_play_state_reinforcement:
+                        reinforcement_state_change = ' R\u2191'
+                    elif sys.power_play_state_reinforcement < sys.orig_power_play_state_reinforcement:
+                        reinforcement_state_change = ' R\u2193'
+                    else:
+                        reinforcement_state_change = ' R\u2194'
+                    undermining_state_change = ''
+                    if sys.power_play_state_undermining > sys.orig_power_play_state_undermining:
+                        undermining_state_change = ' U\u2191'
+                    elif sys.power_play_state_undermining < sys.orig_power_play_state_undermining:
+                        undermining_state_change = ' U\u2193'
+                    else:
+                        undermining_state_change = ' U\u2194'
 
-                lbl = None
-                total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
-                if sys.controlling_power != '':
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
-                else:
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                theme.register(lbl)
-                self.power_play_list_labels.append(lbl)
-                cur_row += 1
+                    lbl = None
+                    total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
+                    if sys.controlling_power != '':
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
+                    else:
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    theme.register(lbl)
+                    self.power_play_list_labels.append(lbl)
+                    cur_row += 1
+        else:
+            self.merits_by_systems_label.grid_remove()
 
-        if self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0:
+        if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
             self.powerplay_commodities_label.grid(row=cur_row)
             self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
             cur_row += 1
-            if self.current_session.total_commodities_delivered > 0:
-                lbl = tk.Label(self.frame, text=f"Delivered By type:")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl)
-                cur_row += 1
-                for commod in self.current_session.commodities_delivered_types:
-                    count = self.current_session.total_commodities_delivered_by_type(commod)
-                    if count > 0:
-                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
-                        lbl.grid(row=cur_row, column=0, sticky="w")
-                        self.power_play_list_labels.append(lbl)
-                        theme.register(lbl)
-                        cur_row += 1
+            if  self.current_session.total_commodities_delivered > 0:
+                if self.options_view_powerplay_commodities_by_type.get():
+                    lbl = tk.Label(self.frame, text=f"Delivered By type:")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl)
+                    cur_row += 1
+                    for commod in self.current_session.commodities_delivered_types:
+                        count = self.current_session.total_commodities_delivered_by_type(commod)
+                        if count > 0:
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
 
-                lbl = tk.Label(self.frame, text=f"Delivered By system:")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl) 
-                cur_row += 1
-                for commod in self.current_session.commodities_delivered_systems:
-                    count = self.current_session.total_commodities_delivered_by_system(commod)
-                    if count > 0:
-                        tab_spacing = '\t' if len(commod) < 7 else ''
-                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
-                        lbl.grid(row=cur_row, column=0, sticky="w")
-                        self.power_play_list_labels.append(lbl)
-                        theme.register(lbl)
-                        cur_row += 1
+                if self.options_view_powerplay_commodities_by_system.get():
+                    lbl = tk.Label(self.frame, text=f"Delivered By system:")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl) 
+                    cur_row += 1
+                    for commod in self.current_session.commodities_delivered_systems:
+                        count = self.current_session.total_commodities_delivered_by_system(commod)
+                        if count > 0:
+                            tab_spacing = '\t' if len(commod) < 7 else ''
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
 
-        lbl = tk.Label(self.frame, text=f"Merits by Activity:")
-        lbl.grid(row=cur_row, column=0, sticky="w")
-        self.power_play_list_labels.append(lbl)
-        cur_row += 1
-        for act in self.current_session.activities.activities:
-            if act.merits > 0: 
-                tab_spacing = '\t' if len(act.activity_type) < 12 else ''
-                lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl)
-                theme.register(lbl)
-                cur_row += 1
+        if self.options_view_merits_by_activities.get() and self.current_session.activities.total_activities > 0:
+            lbl = tk.Label(self.frame, text=f"Merits by Activity:")
+            lbl.grid(row=cur_row, column=0, sticky="w")
+            self.power_play_list_labels.append(lbl)
+            cur_row += 1
+            for act in self.current_session.activities.activities:
+                if act.merits > 0: 
+                    tab_spacing = '\t' if len(act.activity_type) < 12 else ''
+                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl)
+                    theme.register(lbl)
+                    cur_row += 1
             
         self.copy_button.grid(row=cur_row)
         cur_row += 1
