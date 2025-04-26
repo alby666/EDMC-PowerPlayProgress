@@ -1,10 +1,10 @@
 """
 Type	                        Activity	                                                                                                                Implemented
-Aid & Donation Missions	        Complete aid and humanitarian missions	                                                                                        Y (Donations)
+Aid & Donation Missions	        Complete aid and humanitarian missions	                                                                                        Y
 Bounty Hunting	                Bounty Hunting		                                                                                                            Y
 Bounty Hunting	                Kill enemies	                                                                                                                Y                                       
 Bounty Hunting	                Power kills - kill enemies in aquisition systems		                                                                        Y
-Cartography	                    Sell Cartography data at Universal Cartographics	
+Cartography	                    Sell Cartography data at Universal Cartographics	                                                                            Y
 Commit Crimes	                Commit Crimes in Undermining systems	                                                                                        Y      
 Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	                        Y
 Deliver PowerPlay Commodities	Deliver Reinforcement commodity to Power Contacts from Stronghold/Fortified systems	                                            Y
@@ -14,11 +14,11 @@ Download data	                (Ody) Download Power association/Political data fr
 Download data	                (Ody) Download Power Classified data from settlements in aquisition, sell in stronghold/fortified
 Download data	                (Ody) Download Power Classified data from settlements, sell in stronghold/fortified
 Download data	                (Ody) Download Power research/Industrial data from settlements in aquisition, return to stronghold/fortified
-Exobiology	                    turn in exobiology data to Power Contact in Reinforcement system	
-High Value Commodities	        Sell trade commodities at 40% or higher	
+Exobiology	                    turn in exobiology data to Power Contact in Reinforcement system	                                                            Y
+High Value Commodities	        Sell trade commodities at 40% or higher	                                                                                        Y
 Holoscreen hacking	            Holoscreen hacking at ports	                                                                                                    Y       
-Low Value Commodities	        Sell commodities worth less than 500cr per ton	
-Mined Commodities	            Sell mined items (not bought minable items)	
+Low Value Commodities	        Sell commodities worth less than 500cr per ton	                                                                                Y
+Mined Commodities	            Sell mined items (not bought minable items)	                                                                                    Y
 Rare Goods	                    Sell rare goods not aquired in aquisition systems                                                                               Y	
 Rare Goods	                    Sell rare goods not aquired in Reinforcement system	                                                                            Y      
 Retrieve Power items	        (Ody) Retreive specific items from Power containers	
@@ -35,6 +35,8 @@ Upload data	                    (Ody) Upload powerplay malware
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from consts import PLUGIN_NAME, plugin_version
 from config import appname # type: ignore # noqa: N813
+
+import re
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -65,6 +67,8 @@ class RecentJournal:
         "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium"}
 
     salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
+
+    donation_missions = r"^Mission_Altruism.*$"
 
     HISTORY_DEPTH: int = 10
 
@@ -126,11 +130,11 @@ class RecentJournal:
         else:
             #Depending on server load powerplay merits events can come before mission completed or vice versa
             return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
-                    and self.__journal_entries_log[0].get("Name", "") == "Mission_AltruismCredits_name"
+                    and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
                     and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits") or (
                     self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
                         and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
-                        and self.__journal_entries_log[1].get("Name", "") == "Mission_AltruismCredits_name")
+                        and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
     
     @property
     def isScanDataLinks(self) -> bool:
@@ -172,11 +176,43 @@ class RecentJournal:
                  or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
 
+    @property
+    def isHighValueCommditySale(self) -> bool:
+        #logger.debug(f"isHighValueCommditySale recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                (self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[1].get("SellPrice", 1) / self.__journal_entries_log[1].get("AvgPricePaid", 1)) >= 1.4)
+                 or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[2].get("SellPrice", 1) / self.__journal_entries_log[2].get("AvgPricePaid", 1)) >= 1.4)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")))
+
+    @property
+    def isLowValueCommditySale(self) -> bool:
+        #logger.debug(f"isLowValueCommditySale recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("SellPrice", 0) <= 500
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+    @property
+    def isExobiology(self) -> bool:
+        #logger.debug(f"isExobiology recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                (self.__journal_entries_log[1].get("event", "") == "SellOrganicData"
+                 or self.__journal_entries_log[2].get("event", "") == "SellOrganicData")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+    @property
+    def isMined(self) -> bool:
+        #logger.debug(f"isMined recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and
+                ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) == 0)
+                 or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) == 0))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+
     #Purely for debugging purposes for unknown activities
     def writelog(self) -> None:
         for entry in self.__journal_entries_log:
             logger.debug(f"Recent Journal Entry: {entry}")
-            
+
     """
     @property
     def isUnknown(self) -> bool:

@@ -14,12 +14,16 @@ PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to track th
   * Ship scans
   * Bounties
   * Power play deliveries
-  * Donation missions
+  * Donation and aid missions
   * NEW: Scan Data Links
   * NEW: Holoscreen Hacks
   * NEW: Rare Goods
   * NEW: Salvage
   * NEW: Cartograhy
+  * NEW: High Value Commodities
+  * NEW: Low Value Commodities
+  * NEW: Exobiology
+  * NEW: Mined Commodities
   * Unknowns (quite a few I haven't implemented yet but also some rando bugs!)
   * more to come....
 

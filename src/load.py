@@ -11,7 +11,7 @@ import math
 import locale
 import requests
 import semantic_version  # type: ignore # noqa: N813
-
+import re
 import tkinter as tk
 from tkinter import ttk
 from consts import PLUGIN_NAME, plugin_version
@@ -686,6 +686,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isSalvage: ppp.current_session.activities.add_salvage_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isCartography: ppp.current_session.activities.add_cartography_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isHighValueCommditySale: ppp.current_session.activities.add_high_value_commodities_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isLowValueCommditySale: ppp.current_session.activities.add_low_value_commodities_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"])
             else: 
                 ppp.recent_journal_log.writelog()
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
@@ -727,7 +731,8 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 logger.debug(f"Mission completed event: {entry}")
                 logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
                 logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
-                if entry.get("Name", "") == "Mission_AltruismCredits_name" and ppp.recent_journal_log.isDonationMission:
+
+                if re.match(r"^Mission_Altruism.*$", entry.get("Name", "")) and ppp.recent_journal_log.isDonationMission:
                     #Move the merits from the unknown activity to the donation mission activity
                     ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
                     ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
