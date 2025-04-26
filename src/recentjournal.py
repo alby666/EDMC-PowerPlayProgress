@@ -5,10 +5,10 @@ Bounty Hunting	                Bounty Hunting		                                 
 Bounty Hunting	                Kill enemies	                                                                                                                Y                                       
 Bounty Hunting	                Power kills - kill enemies in aquisition systems		                                                                        Y
 Cartography	                    Sell Cartography data at Universal Cartographics	
-Commit Crimes	                Commit Crimes in Undermining systems	
-Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	
-Deliver PowerPlay Commodities	Deliver Reinforcement commodity to Power Contacts from Stronghold/Fortified systems	
-Deliver PowerPlay Commodities	Deliver to Power Contact in Undermining system after obtaining from Power Contact in any co-aligned stronghold system
+Commit Crimes	                Commit Crimes in Undermining systems	                                                                                        Y      
+Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	                        Y
+Deliver PowerPlay Commodities	Deliver Reinforcement commodity to Power Contacts from Stronghold/Fortified systems	                                            Y
+Deliver PowerPlay Commodities	Deliver to Power Contact in Undermining system after obtaining from Power Contact in any co-aligned stronghold system           Y
 Download data	                (Ody) Download Power association/Political data from settlements in aquisition, return to stronghold/fortified
 Download data	                (Ody) Download Power association/Political data from settlements, return to stronghold/fortified
 Download data	                (Ody) Download Power Classified data from settlements in aquisition, sell in stronghold/fortified
@@ -43,7 +43,7 @@ class RecentJournal:
     #These are the journal entries we are not interested in - we want meritible actions and the "powerplaymerits" entries
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
-             "hulldamage", "repairall", "repair", "missionaccepted"}
+             "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted"}
 
     rare_goods = {
         "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
@@ -62,8 +62,7 @@ class RecentJournal:
         "leatheryeggs", "anynacoffee", "deltaphoenicispalms", "personalgifts", "edenapplesofaerial", "hr7221wheat", "yasokondileaf", "holvaduellingblades", "anduligafireworks", "burnhambiledistillate", 
         "kinagoviolins", "ngadandarifireopals", "rapabaosnakeskins", "toxandjivirocide", "kamitracigars", "wuthielokufroth", "sanumadecorativemeat", "geawendancedust", "jarouarice", "giantirukamasnails", 
         "classifiedexperimentalequipment", "njangarisaddles", "soontillrelics", "gomanyauponcoffee", "karsukilocusts", "eshuumbrellas", "wheemetewheatcakes", "sothiscrystallinegold", 
-        "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium", 
-    }
+        "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium"}
 
     salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
 
@@ -135,7 +134,7 @@ class RecentJournal:
     
     @property
     def isScanDataLinks(self) -> bool:
-        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isScanDataLinks recent journal entries: {self.__journal_entries_log}")
         return (len(self.__journal_entries_log) > 2 and 
                 ((self.__journal_entries_log[1].get("event", "") == "DataScanned" and self.__journal_entries_log[1].get("Type", "") == "$Datascan_ShipUplink;")
                     or (self.__journal_entries_log[2].get("event", "") == "DataScanned" and self.__journal_entries_log[2].get("Type", "") == "$Datascan_ShipUplink;"))
@@ -143,7 +142,7 @@ class RecentJournal:
         
     @property
     def isHoloscreenHack(self) -> bool:
-        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isHoloscreenHack recent journal entries: {self.__journal_entries_log}")
         return (len(self.__journal_entries_log) > 2 and 
                 ((self.__journal_entries_log[1].get("event", "") == "HoloscreenHacked"
                     or self.__journal_entries_log[2].get("event", "") == "HoloscreenHacked")
@@ -151,7 +150,7 @@ class RecentJournal:
 
     @property
     def isRareGoods(self) -> bool:
-        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isRareGoods recent journal entries: {self.__journal_entries_log}")
         return (len(self.__journal_entries_log) > 2 and 
                 ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
                     or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
@@ -159,15 +158,29 @@ class RecentJournal:
 
     @property
     def isSalvage(self) -> bool:
-        #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isSalvage recent journal entries: {self.__journal_entries_log}")
         return (len(self.__journal_entries_log) > 2 and 
                 ((self.__journal_entries_log[1].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[1].get("Name", "") in self.salvage_types)
                     or (self.__journal_entries_log[2].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[2].get("Name", "") in self.salvage_types)
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
 
+    @property
+    def isCartography(self) -> bool:
+        #logger.debug(f"isCartography recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData" or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData")
+                 or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
 
+    #Purely for debugging purposes for unknown activities
+    def writelog(self) -> None:
+        for entry in self.__journal_entries_log:
+            logger.debug(f"Recent Journal Entry: {entry}")
+            
+    """
     @property
     def isUnknown(self) -> bool:
         logger.debug(f"Unknown: {self.__journal_entries_log}")
-        #will eventually need a number of NOT ORs here
+        #will eventually need a number of NOT ANDs here
         return (not self.isScan and not self.isBounty and not self.isPowerPlayDelivery)
+    """

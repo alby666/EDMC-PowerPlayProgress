@@ -14,8 +14,8 @@ class SessionProgress(object):
                 self.merits = merits
 
         def __init__(self) -> None:
-            self.activities_type_list = {0: "Unknown", 1: "Ship Scans", 2: "Bounty", 3: "Powerplay Delivery", 4: "Donation Mission", 5: "Scan Data Links", 6: "Holoscreen Hacks"
-                                         , 7: "Rare Goods", 8: "Salvage"}
+            self.activities_type_list = {0: "Unknown", 1: "Ship Scans", 2: "Bounties", 3: "Powerplay Deliveries", 4: "Donation Missions", 5: "Scan Data Links", 6: "Holoscreen Hacks"
+                                         , 7: "Rare Goods", 8: "Salvage", 9 : "Cartography"}
             self.activities: list[SessionProgress.Activities.Activity] = []
             for item in self.activities_type_list:
                 self.activities.append(SessionProgress.Activities.Activity(self.activities_type_list[item], 0))
@@ -55,6 +55,10 @@ class SessionProgress(object):
         def add_salvage_merits(self, merits) -> int:
             self.activities[8].merits += merits
             return self.activities[8].merits
+        
+        def add_cartography_merits(self, merits) -> int:
+            self.activities[9].merits += merits
+            return self.activities[9].merits
         
     class Commodities(object):
         """

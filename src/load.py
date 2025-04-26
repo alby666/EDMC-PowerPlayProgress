@@ -685,7 +685,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isSalvage: ppp.current_session.activities.add_salvage_merits(entry["MeritsGained"])
-            else: ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isCartography: ppp.current_session.activities.add_cartography_merits(entry["MeritsGained"])
+            else: 
+                ppp.recent_journal_log.writelog()
+                ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
 
             ppp.last_merits_gained = entry["MeritsGained"]
         case 'powerplayrank':
