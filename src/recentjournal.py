@@ -1,33 +1,33 @@
 """
 Type	                        Activity	                                                                                                                Implemented
-Aid & Donation Missions	        Complete aid and humanitarian missions	                                                                                        Y (Donations)
-Bounty Hunting	                Bounty Hunting	
-Bounty Hunting	                Kill enemies	
-Bounty Hunting	                Power kills - kill enemies in aquisition systems	
-Cartography	                    Sell Cartography data at Universal Cartographics	
-Commit Crimes	                Commit Crimes in Undermining systems	
-Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	
-Deliver PowerPlay Commodities	Deliver Reinforcement commodity to Power Contacts from Stronghold/Fortified systems	
-Deliver PowerPlay Commodities	Deliver to Power Contact in Undermining system after obtaining from Power Contact in any co-aligned stronghold system
+Aid & Donation Missions	        Complete aid and humanitarian missions	                                                                                        Y
+Bounty Hunting	                Bounty Hunting		                                                                                                            Y
+Bounty Hunting	                Kill enemies	                                                                                                                Y                                       
+Bounty Hunting	                Power kills - kill enemies in aquisition systems		                                                                        Y
+Cartography	                    Sell Cartography data at Universal Cartographics	                                                                            Y
+Commit Crimes	                Commit Crimes in Undermining systems	                                                                                        Y      
+Deliver PowerPlay Commodities	Deliver Powerplay commodities from Fortified/Stronghold systems to Power Contact in Aquisition systems"	                        Y
+Deliver PowerPlay Commodities	Deliver Reinforcement commodity to Power Contacts from Stronghold/Fortified systems	                                            Y
+Deliver PowerPlay Commodities	Deliver to Power Contact in Undermining system after obtaining from Power Contact in any co-aligned stronghold system           Y
 Download data	                (Ody) Download Power association/Political data from settlements in aquisition, return to stronghold/fortified
 Download data	                (Ody) Download Power association/Political data from settlements, return to stronghold/fortified
 Download data	                (Ody) Download Power Classified data from settlements in aquisition, sell in stronghold/fortified
 Download data	                (Ody) Download Power Classified data from settlements, sell in stronghold/fortified
 Download data	                (Ody) Download Power research/Industrial data from settlements in aquisition, return to stronghold/fortified
-Exobiology	                    turn in exobiology data to Power Contact in Reinforcement system	
-High Value Commodities	        Sell trade commodities at 40% or higher	
-Holoscreen hacking	            Holoscreen hacking at ports	
-Low Value Commodities	        Sell commodities worth less than 500cr per ton	
-Mined Commodities	            Sell mined items (not bought minable items)	
-Rare Goods	                    Sell rare goods not aquired in aquisition systems	
-Rare Goods	                    Sell rare goods not aquired in Reinforcement system	
+Exobiology	                    turn in exobiology data to Power Contact in Reinforcement system	                                                            Y
+High Value Commodities	        Sell trade commodities at 40% or higher	                                                                                        Y
+Holoscreen hacking	            Holoscreen hacking at ports	                                                                                                    Y       
+Low Value Commodities	        Sell commodities worth less than 500cr per ton	                                                                                Y
+Mined Commodities	            Sell mined items (not bought minable items)	                                                                                    Y
+Rare Goods	                    Sell rare goods not aquired in aquisition systems                                                                               Y	
+Rare Goods	                    Sell rare goods not aquired in Reinforcement system	                                                                            Y      
 Retrieve Power items	        (Ody) Retreive specific items from Power containers	
-Salvage	                        Collect escape pods in Undermining systems	
-Salvage	                        Collect Escape pods, take to Stronhold or Fortified systems	
-Salvage	                        collect salvage and hand in to Power Contact in same Reinforcement system
-Salvage	                        Hand in salvage collected in Unermining systems	
-Scan datalinks	                Scan datalinks at Megaships	
-Scan datalinks	                Scan datalinks at megaships in Undermining systems	
+Salvage	                        Collect escape pods in Undermining systems	                                                                                    Y      
+Salvage	                        Collect Escape pods, take to Stronhold or Fortified systems	                                                                    Y   
+Salvage	                        collect salvage and hand in to Power Contact in same Reinforcement system                                                       Y
+Salvage	                        Hand in salvage collected in Unermining systems	                                                                                Y     
+Scan datalinks	                Scan datalinks at Megaships	                                                                                                    Y
+Scan datalinks	                Scan datalinks at megaships in Undermining systems                                                                              Y	
 Ship scans	                    Scan ships and wakes with built-in scanner	                                                                                    Y
 Upload data	                    (Ody) Upload powerplay malware	
 """
@@ -36,6 +36,8 @@ from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from consts import PLUGIN_NAME, plugin_version
 from config import appname # type: ignore # noqa: N813
 
+import re
+
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
 class RecentJournal:
@@ -43,7 +45,30 @@ class RecentJournal:
     #These are the journal entries we are not interested in - we want meritible actions and the "powerplaymerits" entries
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
-             "hulldamage", "repairall", "repair", "missionaccepted"}
+             "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted"}
+
+    rare_goods = {
+        "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
+        "chameleoncloth", "onionheadalphastrain", "wolffesh", "hipprotosquid", "momusbogspaniel", "taurichimes", "fujintea", "ethgrezeteabuds", "esusekucaviar", "zeesszeantgrubglue", 
+        "azcancriformula42", "witchhaulkobebeef", "eraninpearlwhisky", "pantaaprayersticks", "konggaale", "tiegfriessynthsilk", "voidextractcoffee", "vherculisbodyrub", "vegaslimweed", 
+        "honestypills", "haidenblackbrew", "nanomedicines", "bankiamphibiousleather", "chateaudeaegaeon", "aganipperush", "thehuttonmug", "centaurimegagin", "altairianskin", 
+        "cherbonesbloodcrystals", "jotunmookah", "gilyasignatureweapons", "indibourbon", "havasupaidreamcatcher", "buckyballbeermats", "hip10175bushmeat", "ochoengchillies", 
+        "ophiuchexinoartefacts", "mechucoshightea", "pavoniseargrubs", "crystallinespheres", "lyraeweed", "hiporganophosphates", "borasetanipathogenetics", "volkhabbeedrones", 
+        "wulpahyperboresystems", "motronaexperiencejelly", "lucanonionhead", "tanmarktranquiltea", "onionhead", "tarachspice", "masterchefs", "xihebiomorphiccompanions", "mulachigiantfungus", 
+        "tiolcewaste2pasteunits", "neritusberries", "chieridanimarinepaste", "ltthypersweet", "medbstarlube", "alyabodysoap", "galactictravelguide", "cromsilverfesh", "duradrives", 
+        "alacarakmoskinart", "rajukrumultistoves", "cetirabbits", "aepyornisegg", "ngunamodernantiques", "mokojingbeastfeast", "thewatersofshintara", "ultracompactprocessorprototypes", 
+        "kachiriginfilterleeches", "utgaroarmillennialeggs", "helvetitjpearls", "ceremonialheiketea", "vidavantianlace", "bakedgreebles", "harmasilversearum", "noneuclidianexotanks", 
+        "jaradharrepuzzlebox", "coquimspongiformvictuals", "onionheadbetastrain", "albinoquechuamammothmeat", "karetiicouture", "platinumalloy", "korokungpellets", "aroucaconventualsweets", 
+        "kamorinhistoricweapons", "belalansrayleather", "mukusubiichitinos", "cd75kittenbrandcoffee", "shanscharisorchid", "vanayequiceratomorphafur", "eleuthermals", "apavietii", 
+        "deuringastruffles", "hip118311swarm", "giantverrix", "azuremilk", "leestianeviljuice", "disomacorn", "uszaiantreegrub", "baltahsinevacuumkrill", "lavianbrandy", "orrerianviciousbrew",
+        "leatheryeggs", "anynacoffee", "deltaphoenicispalms", "personalgifts", "edenapplesofaerial", "hr7221wheat", "yasokondileaf", "holvaduellingblades", "anduligafireworks", "burnhambiledistillate", 
+        "kinagoviolins", "ngadandarifireopals", "rapabaosnakeskins", "toxandjivirocide", "kamitracigars", "wuthielokufroth", "sanumadecorativemeat", "geawendancedust", "jarouarice", "giantirukamasnails", 
+        "classifiedexperimentalequipment", "njangarisaddles", "soontillrelics", "gomanyauponcoffee", "karsukilocusts", "eshuumbrellas", "wheemetewheatcakes", "sothiscrystallinegold", 
+        "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium"}
+
+    salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
+
+    donation_missions = r"^Mission_Altruism.*$"
 
     HISTORY_DEPTH: int = 10
 
@@ -60,7 +85,7 @@ class RecentJournal:
 
     @property
     def isScan(self) -> bool:
-        logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) < 3:
             return False
         else:
@@ -84,7 +109,7 @@ class RecentJournal:
     
     @property
     def isPowerPlayDelivery(self) -> bool:
-        logger.debug(f"isPowerPlayDelivery recent journal entries: {self.__journal_entries_log}")
+        #logger.debug(f"isPowerPlayDelivery recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) < 3:
             return False
         else:
@@ -105,15 +130,93 @@ class RecentJournal:
         else:
             #Depending on server load powerplay merits events can come before mission completed or vice versa
             return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
-                    and self.__journal_entries_log[0].get("Name", "") == "Mission_AltruismCredits_name"
+                    and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
                     and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits") or (
                     self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
                         and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
-                        and self.__journal_entries_log[1].get("Name", "") == "Mission_AltruismCredits_name")
+                        and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
     
+    @property
+    def isScanDataLinks(self) -> bool:
+        #logger.debug(f"isScanDataLinks recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "DataScanned" and self.__journal_entries_log[1].get("Type", "") == "$Datascan_ShipUplink;")
+                    or (self.__journal_entries_log[2].get("event", "") == "DataScanned" and self.__journal_entries_log[2].get("Type", "") == "$Datascan_ShipUplink;"))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        
+    @property
+    def isHoloscreenHack(self) -> bool:
+        #logger.debug(f"isHoloscreenHack recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "HoloscreenHacked"
+                    or self.__journal_entries_log[2].get("event", "") == "HoloscreenHacked")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isRareGoods(self) -> bool:
+        #logger.debug(f"isRareGoods recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
+                    or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isSalvage(self) -> bool:
+        #logger.debug(f"isSalvage recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[1].get("Name", "") in self.salvage_types)
+                    or (self.__journal_entries_log[2].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[2].get("Name", "") in self.salvage_types)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isCartography(self) -> bool:
+        #logger.debug(f"isCartography recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData" or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData")
+                 or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+
+    @property
+    def isHighValueCommditySale(self) -> bool:
+        #logger.debug(f"isHighValueCommditySale recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                (self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[1].get("SellPrice", 1) / self.__journal_entries_log[1].get("AvgPricePaid", 1)) >= 1.4)
+                 or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[2].get("SellPrice", 1) / self.__journal_entries_log[2].get("AvgPricePaid", 1)) >= 1.4)
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")))
+
+    @property
+    def isLowValueCommditySale(self) -> bool:
+        #logger.debug(f"isLowValueCommditySale recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("SellPrice", 0) <= 500
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+    @property
+    def isExobiology(self) -> bool:
+        #logger.debug(f"isExobiology recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and 
+                (self.__journal_entries_log[1].get("event", "") == "SellOrganicData"
+                 or self.__journal_entries_log[2].get("event", "") == "SellOrganicData")
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+    @property
+    def isMined(self) -> bool:
+        #logger.debug(f"isMined recent journal entries: {self.__journal_entries_log}")
+        return (len(self.__journal_entries_log) > 2 and
+                ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) == 0)
+                 or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) == 0))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+
+
+    #Purely for debugging purposes for unknown activities
+    def writelog(self) -> None:
+        for entry in self.__journal_entries_log:
+            logger.debug(f"Recent Journal Entry: {entry}")
+
+    """
     @property
     def isUnknown(self) -> bool:
         logger.debug(f"Unknown: {self.__journal_entries_log}")
-        #will eventually need a number of NOT ORs here
+        #will eventually need a number of NOT ANDs here
         return (not self.isScan and not self.isBounty and not self.isPowerPlayDelivery)
-    
+    """
