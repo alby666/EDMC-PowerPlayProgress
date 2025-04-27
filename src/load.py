@@ -437,6 +437,13 @@ class PowerPlayProgress:
                 self.power_play_list_labels.append(lbl)
                 theme.register(lbl)
                 cur_row += 1
+                if act.activity_type == 'Mined':
+                    for commod in self.current_session.activities.mined_commodities:
+                        lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
+                        lbl.grid(row=cur_row, column=0, sticky="w")
+                        self.power_play_list_labels.append(lbl)
+                        theme.register(lbl)
+                        cur_row += 1
             
         self.copy_button.grid(row=cur_row)
         cur_row += 1
@@ -689,7 +696,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isHighValueCommditySale: ppp.current_session.activities.add_high_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isLowValueCommditySale: ppp.current_session.activities.add_low_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
-            elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"], ppp.recent_journal_log.get_mined_commodity(), ppp.recent_journal_log.get_mined_tonnage())
             else: 
                 ppp.recent_journal_log.writelog()
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
