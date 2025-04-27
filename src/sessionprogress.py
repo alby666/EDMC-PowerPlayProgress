@@ -30,6 +30,9 @@ class SessionProgress(object):
         def add_unknown_merits(self, merits) -> int:
             self.activities[0].merits += merits
             return self.activities[0].merits
+        
+        def get_unknown_merits(self) -> int:
+            return self.activities[0].merits
 
         def add_ship_scan_merits(self, merits) -> int:
             self.activities[1].merits += merits

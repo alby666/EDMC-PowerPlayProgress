@@ -121,7 +121,7 @@ class RecentJournal:
     
     #Donation missions are usually retrospective and are not recorded in the journal until the mission is completed.
     @property
-    def isDonationMission(self) -> bool:
+    def isDonationMissionMeritsSecond(self) -> bool:
         #logger.debug(f"isdonation 0 event: {self.__journal_entries_log[0].get('event', '')}")
         #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
         #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
@@ -132,11 +132,20 @@ class RecentJournal:
             #Depending on server load powerplay merits events can come before mission completed or vice versa
             return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
                     and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
-                    and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits") or (
-                    self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
+                    and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits")
+    @property
+    def isDonationMissionMeritsFirst(self) -> bool:
+        #logger.debug(f"isdonation 0 event: {self.__journal_entries_log[0].get('event', '')}")
+        #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
+        #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
+        #logger.debug(f"isDonationMission recent journal entries: {self.__journal_entries_log}")
+        if len(self.__journal_entries_log) < 2:
+            return False
+        else:
+            return (self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
                         and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
                         and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
-    
+
     @property
     def isScanDataLinks(self) -> bool:
         #logger.debug(f"isScanDataLinks recent journal entries: {self.__journal_entries_log}")
