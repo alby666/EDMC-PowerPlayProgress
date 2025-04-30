@@ -116,42 +116,84 @@ class PowerPlayProgress:
         :return: The frame to add to the settings window
         """
         frame = nb.Frame(parent)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(sticky=tk.NSEW)
 
-        display_options_frame = ttk.LabelFrame(frame, text="Display Options", padding=(10, 10))
-        display_options_frame.grid(row=0, padx=10, pady=10, sticky="nsew")
+        HyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
+                    url='https://github.com/alby666/EDMC-PowerPlayProgress/releases', underline=True) \
+            .grid(row=0, padx=5, pady= 10, sticky=tk.W)    
 
-        totals_options_frame = ttk.LabelFrame(display_options_frame, text="Totals options", padding=(10, 10))
-        totals_options_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        HyperlinkLabel(frame, text="Report an Issue", background=nb.Label().cget('background'),
+                    url='https://github.com/alby666/EDMC-PowerPlayProgress/issues/new/choose', underline=True) \
+            .grid(row=0, column=1, padx=5, pady= 10, sticky=tk.E)    
 
-        activities_options_frame = ttk.LabelFrame(display_options_frame, text="Activities options", padding=(10, 10))
-        activities_options_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        notebook = ttk.Notebook(frame)    
+        notebook.add(self.get_display_prefs_tab(notebook), text='Display options')
+        notebook.grid(row=10, columnspan=2, pady=0, sticky=tk.NSEW)
 
-        powerplay_options_frame = ttk.LabelFrame(display_options_frame, text="Powerplay Commodity Options", padding=(10, 10))
-        powerplay_options_frame.grid(row=1, column=2, padx=10, pady=10, sticky="nsew")
-
-        export_options_frame = ttk.LabelFrame(display_options_frame, text="Copy Progress Options", padding=(10, 10))
-        export_options_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-
-        # Add checkboxes and labels to the frame, aligning the checkboxes to the right
-        def add_checkbox(lblFrame, row, text, lblsticky, variable):
-            label = tk.Label(lblFrame, text=text, anchor="w")
-            label.grid(row=row, column=0, padx=5, pady=2, sticky=lblsticky)
-            checkbox = tk.Checkbutton(lblFrame, variable=variable)
-            checkbox.grid(row=row, column=1, padx=5, pady=2, sticky="w")
-
-        add_checkbox(totals_options_frame, 1, "Totals", "w", self.options_view_totals)
-        add_checkbox(totals_options_frame, 2, "Merits by Systems","w", self.options_view_merits_by_systems)
-        add_checkbox(activities_options_frame, 0, "Merits by Activities","w", self.options_view_merits_by_activities)
-        add_checkbox(activities_options_frame, 1, "Detail mined commodities", "e", self.options_view_detail_mined_commodities)
-        add_checkbox(powerplay_options_frame, 0, "Powerplay commodities", "w", self.options_view_powerplay_commodities)
-        add_checkbox(powerplay_options_frame, 1, "By type", "e", self.options_view_powerplay_commodities_by_type)
-        add_checkbox(powerplay_options_frame, 2, "By system", "e", self.options_view_powerplay_commodities_by_system)
-
-        tk.Label(export_options_frame, text="Format:").grid(row=0, column=0, padx=5, pady=2, sticky="w")
-        tk.Radiobutton(export_options_frame, text="Text", variable=self.options_view_export_format, value="Text").grid(row=0, column=1, padx=5, pady=2, sticky="w")
-        tk.Radiobutton(export_options_frame, text="Discord", variable=self.options_view_export_format, value="Discord").grid(row=0, column=2, padx=5, pady=2, sticky="w")
         return frame
 
+    def get_display_prefs_tab(self, parent: nb.Notebook) -> nb.Frame:
+        """
+        setup_preferences is called by plugin_prefs below.
+
+        It is where we can setup our own settings page in EDMC's settings window. Our tab is defined for us.
+
+        :param parent: the tkinter parent that our returned Frame will want to inherit from
+        :param cmdr: The current ED Commander
+        :param is_beta: Whether or not EDMC is currently marked as in beta mode
+        :return: The frame to add to the settings window
+        """
+        frame = nb.Frame(parent)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(sticky=tk.NSEW)
+
+        row_count = 0
+        
+        nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text="Show/hide Merits by Systems").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_activities, text="Show/hide Merits by Activities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text="Detail mined commodities").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text="Show/hide Powerplay commodities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_type, text="By type").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text="By system").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+
+        export_options = ['Text', 'Discord']
+        nb.Label(frame,
+            text='Copy to Clipboard format:\n' +
+                    '   Text - plain ascii text\n' +
+                    '   Discord - markup format, better suited for pasting to Discord\n',
+            justify=tk.LEFT) \
+        .grid(row=row_count, padx=5, column=0, sticky=tk.NW)
+        row_count+= 1
+        nb.OptionMenu(
+            frame,
+            self.options_view_export_format,
+            self.options_view_export_format.get(),
+            *export_options
+        ).grid(row=row_count, padx=15, sticky=tk.W)
+
+
+        #tk.Label(frame, text="Format:").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        #tk.Radiobutton(frame, text="Text", variable=self.options_view_export_format, value="Text").grid(row=row_count, column=1, padx=5, pady=2, sticky="e")
+        #tk.Radiobutton(frame, text="Discord", variable=self.options_view_export_format, value="Discord").grid(row=row_count, column=2, padx=5, pady=2, sticky="e")
+        return frame
+    
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
         """
         on_preferences_closed is called by prefs_changed below.
@@ -171,7 +213,7 @@ class PowerPlayProgress:
         config.set('options_view_powerplay_commodities_by_type', bool(self.options_view_powerplay_commodities_by_type.get()))
         config.set('options_view_powerplay_commodities_by_system', bool(self.options_view_powerplay_commodities_by_system.get()))
         config.set('options_view_export_format', str(self.options_view_export_format.get()))
-        self.Update_Ppp_Display()
+        if self.total_merits > 0: self.Update_Ppp_Display()
 
     def NextRankDifference(self, currentRank: int) -> int:
         """
@@ -281,13 +323,17 @@ class PowerPlayProgress:
         self.powerplay_level_label.grid(row=current_row, column=0, columnspan=2)
         current_row += 1
 
-        update_version = version_check()
-        #update_version = '0.9.1'  # for testing
-        if update_version != '':
-            url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
-            update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
-            update_link.grid(row=current_row, columnspan=2, sticky="N")
-            current_row += 1
+        try:
+            update_version = version_check()
+            #update_version = '0.9.1'  # for testing
+            if update_version != '':
+                url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
+                update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
+                update_link.grid(row=current_row, columnspan=2, sticky="N")
+                current_row += 1
+        except Exception as ex:
+            # Swallow any exceptions here, we don't want to crash the plugin if we can't check for updates
+            logger.error('Failed to check for updates', exc_info=ex)
 
         # progressbar
         self.pb = ttk.Progressbar(
