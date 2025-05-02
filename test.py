@@ -1,26 +1,32 @@
 import tkinter as tk
 from tkinter import ttk
-import myNotebook as nb  # type: ignore # noqa: N813
 
 # Create the main window
 root = tk.Tk()
-root.title("Separator Example")
-root.geometry("300x200")
+root.title("Checkbutton Example")
 
-# Add a label above the separator
-label_top = ttk.Label(root, text="Above the Separator")
-label_top.pack(pady=10)
+# Create a frame
+frame = ttk.Frame(root, padding=10)
+frame.grid(row=0, column=0)
 
-# Create a horizontal separator
-separator = ttk.Separator(root, orient="horizontal")
-separator.pack(fill="x", pady=10)
+# Function to handle the state change
+def toggle_checkbutton():
+    if check_var1.get():
+        check2.config(state=tk.DISABLED)
+    else:
+        check2.config(state=tk.NORMAL)
 
-# Add a label below the separator
-label_bottom = ttk.Label(root, text="Below the Separator")
-label_bottom.pack(pady=10)
+# Define the IntVar for the checkbuttons
+check_var1 = tk.IntVar()
+check_var2 = tk.IntVar()
 
-chk = nb.Checkbutton(root, text="Check me")
-chk.pack(pady=10)
+# Create the checkbuttons
+check1 = ttk.Checkbutton(frame, text="Disable Second", variable=check_var1, command=toggle_checkbutton)
+check2 = ttk.Checkbutton(frame, text="Second Checkbutton", variable=check_var2)
 
-# Run the application
+# Place the checkbuttons in the frame
+check1.grid(row=0, column=0, padx=5, pady=5)
+check2.grid(row=1, column=0, padx=5, pady=5)
+
+# Run the main loop
 root.mainloop()

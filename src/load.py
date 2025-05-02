@@ -60,7 +60,7 @@ class PowerPlayProgress:
         self.options_view_powerplay_commodities = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities', default=True)))
         self.options_view_powerplay_commodities_by_type = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_type', default=True)))
         self.options_view_powerplay_commodities_by_system = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_system', default=True)))
-        self.options_view_export_format = tk.StringVar(value=config.get('options_view_export_format', default='Text'))
+        self.options_view_export_format = tk.StringVar(value=config.get_str('options_view_export_format', default='Text'))
 
         self.pb: ttk.Progressbar = ttk.Progressbar()
         self.value_label: tk.Label = tk.Label()
@@ -135,16 +135,6 @@ class PowerPlayProgress:
         return frame
 
     def get_display_prefs_tab(self, parent: nb.Notebook) -> nb.Frame:
-        """
-        setup_preferences is called by plugin_prefs below.
-
-        It is where we can setup our own settings page in EDMC's settings window. Our tab is defined for us.
-
-        :param parent: the tkinter parent that our returned Frame will want to inherit from
-        :param cmdr: The current ED Commander
-        :param is_beta: Whether or not EDMC is currently marked as in beta mode
-        :return: The frame to add to the settings window
-        """
         frame = nb.Frame(parent)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -188,10 +178,6 @@ class PowerPlayProgress:
             *export_options
         ).grid(row=row_count, padx=15, sticky=tk.W)
 
-
-        #tk.Label(frame, text="Format:").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
-        #tk.Radiobutton(frame, text="Text", variable=self.options_view_export_format, value="Text").grid(row=row_count, column=1, padx=5, pady=2, sticky="e")
-        #tk.Radiobutton(frame, text="Discord", variable=self.options_view_export_format, value="Discord").grid(row=row_count, column=2, padx=5, pady=2, sticky="e")
         return frame
     
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
@@ -281,10 +267,6 @@ class PowerPlayProgress:
         for lbl in self.power_play_list_labels:
             self.frame.clipboard_append(lbl.cget("text"))
             self.frame.clipboard_append("\n")
-        #for sys in self.systems:
-        #    if sys.earnings > 0:
-        #        self.frame.clipboard_append("\t" + sys.system + ": " + str(sys.earnings))
-        #        self.frame.clipboard_append("\n")        
         self.frame.update()  # Ensure clipboard updates
 
     def copy_to_clipboard_discord(self):
@@ -296,11 +278,10 @@ class PowerPlayProgress:
         self.frame.clipboard_append("**" + self.total_session_merits.cget("text") + "**\n")
         self.frame.clipboard_append("**" + self.total_since_merits.cget("text") + "**\n")
         self.frame.clipboard_append("**" + self.total_prev_merits.cget("text") + "**\n")
-        #self.frame.clipboard_append("**Merits by Systems:** " + self.merits_by_systems_label.cget("text") + "\n\n")
         
         # Format labels in the power_play_list_labels list
         for lbl in self.power_play_list_labels:
-            if lbl.cget("text").left(1) != "\t":
+            if lbl.cget("text")[0] != "\t":
                 self.frame.clipboard_append(f"**" + lbl.cget("text") + "**\n")
             else:
                 self.frame.clipboard_append("- " + lbl.cget("text") + "\n")  # Use bullet points
@@ -361,26 +342,19 @@ class PowerPlayProgress:
             current_row += 1
 
         self.total_merits_label = tk.Label(self.frame, text=f"Total Merits: 345345")
-        self.total_merits_label.grid(row=current_row, column=0, sticky=tk.W)
         current_row += 1
-
         self.total_session_merits = tk.Label(self.frame, text=f"Total Merits this sessiona: 345345")
-        self.total_session_merits.grid(row=current_row, column=0, sticky=tk.W)
         current_row += 1
         self.total_since_merits = tk.Label(self.frame, text="Total Merits since last dock/death: 23423")
-        self.total_since_merits.grid(row=current_row, column=0, sticky="w")
         current_row += 1
         self.total_prev_merits = tk.Label(self.frame, text="Total Merits since previous dock/death: N/A")
-        self.total_prev_merits.grid(row=current_row, column=0, sticky="w")
         current_row += 1
 
         self.merits_by_systems_label = tk.Label(self.frame, text="Merits by Systems:")
-        self.merits_by_systems_label.grid(row=current_row, column=0, sticky="w")        
         current_row += 1
         self.flex_row = current_row
 
         self.powerplay_commodities_label = tk.Label(self.frame, text="PowerPlay Commodities (collected/delivered): 34/56")
-        self.powerplay_commodities_label.grid(row=current_row, column=0, sticky="w")
         current_row += 1
 
         self.copy_button = tk.Button(
@@ -388,19 +362,11 @@ class PowerPlayProgress:
             text="Copy Progress",
             command=self.copy_to_clipboard_text
         )
-        self.copy_button.grid(row=current_row, column=0, columnspan=2, sticky="W")
         current_row += 1
 
         #hide them for now
         self.pb.grid_remove()
         self.value_label.grid_remove()  
-        self.total_merits_label.grid_remove()
-        self.total_session_merits.grid_remove()
-        self.total_since_merits.grid_remove()
-        self.total_prev_merits.grid_remove()
-        self.merits_by_systems_label.grid_remove()
-        self.powerplay_commodities_label.grid_remove()
-        self.copy_button.grid_remove()
 
         return self.frame
 
@@ -424,10 +390,10 @@ class PowerPlayProgress:
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
         
         if self.options_view_totals.get():
-            self.total_merits_label.grid()
-            self.total_session_merits.grid()
-            self.total_since_merits.grid()
-            self.total_prev_merits.grid()
+            self.total_merits_label.grid(column=0, sticky=tk.W)
+            self.total_session_merits.grid(column=0, sticky=tk.W)
+            self.total_since_merits.grid(column=0, sticky=tk.W)
+            self.total_prev_merits.grid(column=0, sticky=tk.W)
             total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
             self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
 
@@ -451,8 +417,8 @@ class PowerPlayProgress:
         self.power_play_list_labels.clear()
 
         cur_row = self.flex_row
-        if self.options_view_merits_by_systems.get():
-            self.merits_by_systems_label.grid(row=cur_row)
+        if self.options_view_merits_by_systems.get() and len(self.systems) > 0:
+            self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
             cur_row += 1
             for sys in self.systems:
                 if sys.earnings > 0:
@@ -526,22 +492,27 @@ class PowerPlayProgress:
                             theme.register(lbl)
                             cur_row += 1
 
-        if self.options_view_merits_by_activities.get() and self.current_session.activities.total_activities > 0:
+        if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
             lbl = tk.Label(self.frame, text=f"Merits by Activity:")
             lbl.grid(row=cur_row, column=0, sticky="w")
             self.power_play_list_labels.append(lbl)
             cur_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
-                    tab_spacing = '\t' if len(act.activity_type) < 12 else ''
-                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
+                    #tab_spacing = '\t' if len(act.activity_type) < 12 else ''
+                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}\t{act.merits}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     theme.register(lbl)
                     cur_row += 1
             
-        self.copy_button.grid(row=cur_row)
+        #self.copy_button.grid(row=cur_row)
+        if self.options_view_export_format.get() == 'Text':
+            self.copy_button.config(command=self.copy_to_clipboard_text)
+        else:
+            self.copy_button.config(command=self.copy_to_clipboard_discord)
         cur_row += 1
+        self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
         theme.update(self.frame)
 
 ppp = PowerPlayProgress()
