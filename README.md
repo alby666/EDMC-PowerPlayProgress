@@ -33,7 +33,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Unknowns (a few Ody activities I haven't implemented yet!)
   * more to come....
 
-* Preferences to show/hide all recorded info
+* NEW: Preferences to show/hide all recorded info
 
   <img src="screen_shot_preferences.png" width="500" height="300">
 
