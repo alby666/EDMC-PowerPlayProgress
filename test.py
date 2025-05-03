@@ -1,32 +1,23 @@
 import tkinter as tk
-from tkinter import ttk
 
 # Create the main window
 root = tk.Tk()
-root.title("Checkbutton Example")
+root.title("Tkinter Grid Example")
 
-# Create a frame
-frame = ttk.Frame(root, padding=10)
-frame.grid(row=0, column=0)
+# Create a frame to contain the labels
+frame = tk.Frame(root)
+frame.grid(row=0, column=0, padx=20, pady=20)
 
-# Function to handle the state change
-def toggle_checkbutton():
-    if check_var1.get():
-        check2.config(state=tk.DISABLED)
-    else:
-        check2.config(state=tk.NORMAL)
+# Create two labels
+label1 = tk.Label(frame, text="Label 1", font=("Arial", 14))
+label2 = tk.Label(frame, text="Label 2", font=("Arial", 14))
 
-# Define the IntVar for the checkbuttons
-check_var1 = tk.IntVar()
-check_var2 = tk.IntVar()
+# Place the labels in the frame using grid
+label1.grid(row=0, column=0, padx=10, pady=5)
+label2.grid(row=0, column=1, padx=10, pady=5)
 
-# Create the checkbuttons
-check1 = ttk.Checkbutton(frame, text="Disable Second", variable=check_var1, command=toggle_checkbutton)
-check2 = ttk.Checkbutton(frame, text="Second Checkbutton", variable=check_var2)
+# Center the frame in the main window
+frame.grid_columnconfigure(0, weight=1)
+frame.grid_columnconfigure(1, weight=1)
 
-# Place the checkbuttons in the frame
-check1.grid(row=0, column=0, padx=5, pady=5)
-check2.grid(row=1, column=0, padx=5, pady=5)
-
-# Run the main loop
 root.mainloop()

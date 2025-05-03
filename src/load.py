@@ -18,6 +18,7 @@ from consts import PLUGIN_NAME, plugin_version
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
+from systemprogress import SystemProgress
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
@@ -26,21 +27,6 @@ from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from theme import theme # type: ignore # noqa: N813
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
-
-class SystemProgress(object):
-    """
-    Represents the progress in a single system
-    """
-    system = ''
-    earnings = 0.0
-    controlling_power = ''
-    power_play_state = ''
-    power_play_state_control_progress = 0.0
-    power_play_state_reinforcement = 0.0
-    power_play_state_undermining = 0.0
-    orig_power_play_state_control_progress = 0.0
-    orig_power_play_state_reinforcement = 0.0
-    orig_power_play_state_undermining = 0.0
 
 class PowerPlayProgress:
     """
@@ -61,6 +47,7 @@ class PowerPlayProgress:
         self.options_view_powerplay_commodities_by_type = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_type', default=True)))
         self.options_view_powerplay_commodities_by_system = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_system', default=True)))
         self.options_view_export_format = tk.StringVar(value=config.get_str('options_view_export_format', default='Text'))
+        self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
 
         self.pb: ttk.Progressbar = ttk.Progressbar()
         self.value_label: tk.Label = tk.Label()
@@ -82,6 +69,10 @@ class PowerPlayProgress:
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
+        self.socials_link_discord: HyperlinkLabel = HyperlinkLabel()
+        self.socials_link_reddit: HyperlinkLabel = HyperlinkLabel()
+        self.socials_frame: tk.Frame = tk.Frame()
+        self.socials_power_label: tk.Label = tk.Label()
         self.flex_row = 7
         self.last_merits_gained = 0
         logger.info("PowerPlayProgress instantiated")
@@ -142,6 +133,10 @@ class PowerPlayProgress:
 
         row_count = 0
         
+        nb.Checkbutton(frame, variable=self.options_view_socials, text="Show/hide Socials Links").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
@@ -199,6 +194,7 @@ class PowerPlayProgress:
         config.set('options_view_powerplay_commodities_by_type', bool(self.options_view_powerplay_commodities_by_type.get()))
         config.set('options_view_powerplay_commodities_by_system', bool(self.options_view_powerplay_commodities_by_system.get()))
         config.set('options_view_export_format', str(self.options_view_export_format.get()))
+        config.set('options_view_socials', bool(self.options_view_socials.get()))
         if self.total_merits > 0: self.Update_Ppp_Display()
 
     def NextRankDifference(self, currentRank: int) -> int:
@@ -328,18 +324,24 @@ class PowerPlayProgress:
         self.pb['value'] = 50
 
         # progress label
-        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8))
+        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8), justify=tk.CENTER)
         self.value_label.grid(column=0, row=current_row, columnspan=2)  # Top padding: 2 pixels
         current_row += 1
 
         #Socials
-        if self.current_session.power_play != '':
-            links = Socials.GetLinks(self.current_session.power_play)
-            socials_link_reddit = HyperlinkLabel(self.frame, text=f"Reddit", foreground="blue", cursor="hand2", url=links['reddit'])
-            socials_link_discord = HyperlinkLabel(self.frame, text=f"Discord", foreground="blue", cursor="hand2", url=links['discord'])
-            socials_link_reddit.grid(row=current_row, column=0, sticky="W")
-            socials_link_discord.grid(row=current_row, column=1, sticky="W")
-            current_row += 1
+        self.socials_frame = tk.Frame(self.frame)
+        self.socials_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        current_row += 1
+        self.socials_frame.grid_columnconfigure(0, weight=1)
+        self.socials_frame.grid_columnconfigure(1, weight=1)
+        self.socials_frame.grid_columnconfigure(2, weight=1)
+        self.socials_link_reddit = HyperlinkLabel(self.socials_frame, text=f"Reddit", foreground="blue", cursor="hand2")
+        self.socials_power_label = tk.Label(self.socials_frame, text="PowerPlay Progress", justify=tk.CENTER)
+        self.socials_link_discord = HyperlinkLabel(self.socials_frame, text=f"Discord", foreground="blue", cursor="hand2")
+        self.socials_link_reddit.grid(row=current_row, column=0)
+        self.socials_power_label.grid(row=current_row, column=1)
+        self.socials_link_discord.grid(row=current_row, column=2)
+        current_row += 1
 
         self.total_merits_label = tk.Label(self.frame, text=f"Total Merits: 345345")
         current_row += 1
@@ -367,7 +369,10 @@ class PowerPlayProgress:
         #hide them for now
         self.pb.grid_remove()
         self.value_label.grid_remove()  
-
+        self.socials_link_reddit.grid_remove()
+        self.socials_link_discord.grid_remove()
+        self.socials_power_label.grid_remove()
+        
         return self.frame
 
     def Update_Ppp_Display(self) -> None:
@@ -389,6 +394,22 @@ class PowerPlayProgress:
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
         
+        #Socials
+        if self.options_view_socials.get() and self.current_session.power_play != '':
+            links = Socials.get_links(self.current_session.power_play)
+            self.socials_link_reddit.configure(url=links['reddit'])
+            self.socials_link_discord.configure(url=links['discord'])
+            self.socials_power_label.config(text=self.current_session.power_play)
+            self.socials_frame.grid()
+            self.socials_link_reddit.grid(column=0)
+            self.socials_power_label.grid(column=1)
+            self.socials_link_discord.grid(column=2)
+        else:
+            self.socials_link_reddit.grid_remove()
+            self.socials_link_discord.grid_remove()
+            self.socials_power_label.grid_remove()
+            self.socials_frame.grid_remove()
+
         if self.options_view_totals.get():
             self.total_merits_label.grid(column=0, sticky=tk.W)
             self.total_session_merits.grid(column=0, sticky=tk.W)
@@ -418,8 +439,9 @@ class PowerPlayProgress:
 
         cur_row = self.flex_row
         if self.options_view_merits_by_systems.get() and len(self.systems) > 0:
-            self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
-            cur_row += 1
+            if (self.total_merits - self.starting_merits) > 0:
+                self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
+                cur_row += 1
             for sys in self.systems:
                 if sys.earnings > 0:
                     tab_spacing = '\t' if len(sys.system) < 12 else ''
@@ -459,7 +481,7 @@ class PowerPlayProgress:
             self.merits_by_systems_label.grid_remove()
 
         if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
-            self.powerplay_commodities_label.grid(row=cur_row)
+            self.powerplay_commodities_label.grid(row=cur_row, sticky="w")
             self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
             cur_row += 1
             if  self.current_session.total_commodities_delivered > 0:
@@ -491,6 +513,8 @@ class PowerPlayProgress:
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
                             cur_row += 1
+        else:
+            self.powerplay_commodities_label.grid_remove()
 
         if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
             lbl = tk.Label(self.frame, text=f"Merits by Activity:")
@@ -605,7 +629,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'location':
             """
             Update the current system.
-            'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
+            'cmdr = "xyz", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
             #{"timestamp":"2025-04-08T20:23:51Z","event":"Location","DistFromStarLS":313.110615,"Docked":true,"StationName":"Pratchett Gateway","StationType":"Orbis","MarketID":3226027008,"StationFaction":{"Name":"Casual Crew"},"StationGovernment":"$government_Democracy;","StationGovernment_Localised":"Democracy","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Agri;","StationEconomy_Localised":"Agriculture","StationEconomies":[{"Name":"$economy_Agri;","Name_Localised":"Agriculture","Proportion":1.0}],"Taxi":false,"Multicrew":false,"StarSystem":"Tobala","SystemAddress":3618266663283,"StarPos":[23.34375,-42.46875,79.3125],"SystemAllegiance":"Independent","SystemEconomy":"$economy_Agri;","SystemEconomy_Localised":"Agriculture","SystemSecondEconomy":"$economy_Terraforming;","SystemSecondEconomy_Localised":"Terraforming","SystemGovernment":"$government_Democracy;","SystemGovernment_Localised":"Democracy","SystemSecurity":"$SYSTEM_SECURITY_medium;","SystemSecurity_Localised":"Medium Security","Population":4779808034,"Body":"Pratchett Gateway","BodyID":47,"BodyType":"Station",
             # "ControllingPower":"Denton Patreus","Powers":["Denton Patreus","Yuri Grom","Jerome Archer"],"PowerplayState":"Fortified","PowerplayStateControlProgress":0.278852,"PowerplayStateReinforcement":11942,"PowerplayStateUndermining":88,"Factions":[{"Name":"Revolutionary Tobala Democrats","FactionState":"None","Government":"Democracy","Influence":0.014985,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-22.0847},{"Name":"Tobala Vision Industries","FactionState":"None","Government":"Corporate","Influence":0.00999,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Traditional Tobala Nationalists","FactionState":"None","Government":"Dictatorship","Influence":0.011988,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Tobala Gold Posse","FactionState":"None","Government":"Anarchy","Influence":0.00999,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-18.7796},{"Name":"Tobala Jet Creative & Co","FactionState":"None","Government":"Corporate","Influence":0.034965,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-9.51682,"RecoveringStates":[{"State":"PublicHoliday","Trend":0}]},{"Name":"Loosely Organized Lunatics","FactionState":"None","Government":"Dictatorship","Influence":0.144855,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"RecoveringStates":[{"State":"Blight","Trend":0}]},{"Name":"Casual Crew","FactionState":"None","Government":"Democracy","Influence":0.773227,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"PendingStates":[{"State":"Expansion","Trend":0}]}],"SystemFaction":{"Name":"Casual Crew"}}
@@ -704,21 +728,11 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'powerplaycollect':
             #{"timestamp":"2025-04-05T11:29:18Z","event":"PowerplayCollect","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            logger.debug(
-                f'powerplaycollect - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
-                f', system = "{system}", station = "{station}"'
-                f', event = "{entry["event"]}"'
-                )
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, entry["Count"], 0))
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            logger.debug(
-                f'powerplaydeliver - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
-                f', system = "{system}", station = "{station}"'
-                f', event = "{entry["event"]}"'
-                )
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
 
@@ -769,24 +783,17 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
             ppp.last_merits_gained = entry["MeritsGained"]
         case 'powerplayrank':
-            logger.debug("PowerplayRank event")
             #{"timestamp":"2025-03-29T10:47:35Z","event":"PowerplayRank","Power":"Jerome Archer","Rank":139}
             new_event = True
             ppp.current_session.power_play_rank = entry["Rank"]
 
         case 'powerplay':
-            logger.debug("Powerplay event")
             #{"timestamp":"2025-03-23T08:39:26Z","event":"Powerplay","Power":"Jerome Archer","Rank":138,"Merits":1084487,"TimePledged":12319106}
             new_event = True
             ppp.current_session.power_play = entry["Power"]
             ppp.current_session.power_play_rank = int(entry["Rank"])
             ppp.starting_merits = int(entry["Merits"])
             ppp.total_merits = int(entry["Merits"])
-
-            logger.debug(
-                    f'cmdr = "{cmdrname}", power = "{entry["Power"]}"'
-                    f', rank = "{entry["Rank"]}", merits = "{entry["Merits"]}"'
-            )
 
             if system != '':
                 ppp.current_system = SystemProgress()
@@ -801,9 +808,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
             if ppp.last_merits_gained > 0:
                 new_event = True
-                logger.debug(f"Mission completed event: {entry}")
-                logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
-                logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
+                #logger.debug(f"Mission completed event: {entry}")
+                #logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
+                #logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
 
                 if re.match(r"^Mission_Altruism.*$", entry.get("Name", "")) and ppp.recent_journal_log.isDonationMission:
                     #Move the merits from the unknown activity to the donation mission activity
