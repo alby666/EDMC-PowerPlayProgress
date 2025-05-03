@@ -45,7 +45,8 @@ class RecentJournal:
     #These are the journal entries we are not interested in - we want meritible actions and the "powerplaymerits" entries
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
-             "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted"}
+             "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted",
+             "storedships", "shipyard"}
 
     rare_goods = {
         "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
@@ -125,7 +126,7 @@ class RecentJournal:
     
     #Donation missions are usually retrospective and are not recorded in the journal until the mission is completed.
     @property
-    def isDonationMission(self) -> bool:
+    def isDonationMissionMeritsSecond(self) -> bool:
         #logger.debug(f"isdonation 0 event: {self.__journal_entries_log[0].get('event', '')}")
         #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
         #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
@@ -143,7 +144,7 @@ class RecentJournal:
                             and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
         except IndexError as e:
             return False
-            
+
     @property
     def isScanDataLinks(self) -> bool:
         #logger.debug(f"isScanDataLinks recent journal entries: {self.__journal_entries_log}")
@@ -241,6 +242,24 @@ class RecentJournal:
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
+    
+    def get_mined_commodity(self) -> str:
+        #logger.debug(f"get_mind_commodity recent journal entries: {self.__journal_entries_log}")
+        if len(self.__journal_entries_log) > 2:
+            if self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) == 0:
+                return self.__journal_entries_log[1].get("Type", "")
+            elif self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) == 0:
+                return self.__journal_entries_log[2].get("Type", "")
+        return ""
+
+    def get_mined_tonnage(self) -> int:
+        #logger.debug(f"get_mind_commodity recent journal entries: {self.__journal_entries_log}")
+        if len(self.__journal_entries_log) > 2:
+            if self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) == 0:
+                return self.__journal_entries_log[1].get("Count", 0)
+            elif self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) == 0:
+                return self.__journal_entries_log[2].get("Count", 0)
+        return 0
 
     #Purely for debugging purposes for unknown activities
     def writelog(self) -> None:

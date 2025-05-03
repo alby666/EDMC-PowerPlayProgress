@@ -485,6 +485,7 @@ class PowerPlayProgress:
             self.powerplay_commodities_label.grid(row=cur_row, sticky="w")
             self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
             cur_row += 1
+
             if  self.current_session.total_commodities_delivered > 0:
                 if self.options_view_powerplay_commodities_by_type.get():
                     lbl = tk.Label(self.frame, text=f"Delivered By type:")
@@ -524,12 +525,19 @@ class PowerPlayProgress:
             cur_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
-                    #tab_spacing = '\t' if len(act.activity_type) < 12 else ''
-                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}\t{act.merits}")
+                    tab_spacing = '\t' if len(act.activity_type) < 12 else ''
+                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     theme.register(lbl)
                     cur_row += 1
+                    if act.activity_type == 'Mined':
+                        for commod in self.current_session.activities.mined_commodities:
+                            lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
             
         #self.copy_button.grid(row=cur_row)
         if self.options_view_export_format.get() == 'Text':
@@ -767,8 +775,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             if ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
-            #Donations handled by the MissionCompleted event
-            #elif ppp.recent_journal_log.isDonationMission: ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
+            #Donations missions are a bit tricky as they can be completed after the merits are awarded.
+            elif ppp.recent_journal_log.isDonationMissionMeritsFirst and not ppp.recent_journal_log.isDonationMissionMeritsSecond: 
+                logger.debug(f"Donation mission merits first: {entry}")
+                ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isScanDataLinks: ppp.current_session.activities.add_scan_data_links_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
@@ -777,7 +787,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isHighValueCommditySale: ppp.current_session.activities.add_high_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isLowValueCommditySale: ppp.current_session.activities.add_low_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
-            elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"], ppp.recent_journal_log.get_mined_commodity(), ppp.recent_journal_log.get_mined_tonnage())
             else: 
                 ppp.recent_journal_log.writelog()
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
@@ -807,17 +817,18 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
-            if ppp.last_merits_gained > 0:
-                new_event = True
-                #logger.debug(f"Mission completed event: {entry}")
-                #logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
-                #logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
+           
+            new_event = True
+            #logger.debug(f"Mission completed event: {entry}")
+            #logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
+            #logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
 
-                if re.match(r"^Mission_Altruism.*$", entry.get("Name", "")) and ppp.recent_journal_log.isDonationMission:
-                    #Move the merits from the unknown activity to the donation mission activity
-                    ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
-                    ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
-                    #do not process any other options for previous merits gained
-                    ppp.last_merits_gained = 0
+            if ppp.current_session.activities.get_unknown_merits() > 0 and ppp.recent_journal_log.isDonationMissionMeritsSecond:
+                #Move the merits from the unknown activity to the donation mission activity
+                logger.debug(f"Donation mission merits second: {entry}")
+                ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
+                ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
+                #do not process any other options for previous merits gained
+                ppp.last_merits_gained = 0
             
     if ppp.total_merits > 0 and new_event: ppp.Update_Ppp_Display()
