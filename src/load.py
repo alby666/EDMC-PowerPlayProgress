@@ -14,7 +14,7 @@ import semantic_version  # type: ignore # noqa: N813
 import re
 import tkinter as tk
 from tkinter import ttk
-from consts import PLUGIN_NAME, plugin_version
+from consts import PLUGIN_NAME, plugin_version, mined_heading
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
@@ -445,7 +445,7 @@ class PowerPlayProgress:
                 cur_row += 1
             for sys in self.systems:
                 if sys.earnings > 0:
-                    tab_spacing = '\t' if len(sys.system) < 12 else ''
+                    #tab_spacing = '\t' if len(sys.system) < 12 else ''
                     control_state_change = ''
                     if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
                         control_state_change = ' C\u2191' # Up arrow, increasing
@@ -471,9 +471,9 @@ class PowerPlayProgress:
                     lbl = None
                     total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
                     if sys.controlling_power != '':
-                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
                     else:
-                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{total_str}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     theme.register(lbl)
                     self.power_play_list_labels.append(lbl)
@@ -483,7 +483,7 @@ class PowerPlayProgress:
 
         if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
             self.powerplay_commodities_label.grid(row=cur_row, sticky="w")
-            self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
+            self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected} t/{self.current_session.total_commodities_delivered} t")
             cur_row += 1
 
             if  self.current_session.total_commodities_delivered > 0:
@@ -495,7 +495,7 @@ class PowerPlayProgress:
                     for commod in self.current_session.commodities_delivered_types:
                         count = self.current_session.total_commodities_delivered_by_type(commod)
                         if count > 0:
-                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)} t")
                             lbl.grid(row=cur_row, column=0, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
@@ -510,7 +510,7 @@ class PowerPlayProgress:
                         count = self.current_session.total_commodities_delivered_by_system(commod)
                         if count > 0:
                             tab_spacing = '\t' if len(commod) < 7 else ''
-                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)} t")
                             lbl.grid(row=cur_row, column=0, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
@@ -525,13 +525,12 @@ class PowerPlayProgress:
             cur_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
-                    tab_spacing = '\t' if len(act.activity_type) < 12 else ''
-                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
+                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}\t{act.merits}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     theme.register(lbl)
                     cur_row += 1
-                    if act.activity_type == 'Mined':
+                    if act.activity_type == mined_heading:
                         for commod in self.current_session.activities.mined_commodities:
                             lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
                             lbl.grid(row=cur_row, column=0, sticky="w")
@@ -662,7 +661,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                     found = True
                     break
             if not found and entry.get("ControllingPower", "") != "":
-                logger.debug(f"System not found: {system} {entry}")
+                logger.debug(f"System not found: {system}")
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
@@ -738,7 +737,8 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'powerplaycollect':
             #{"timestamp":"2025-04-05T11:29:18Z","event":"PowerplayCollect","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
             new_event = True
-            ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, entry["Count"], 0))
+            if entry["Type"] != "powerspyware":
+                ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, entry["Count"], 0))
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}

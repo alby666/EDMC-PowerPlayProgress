@@ -1,6 +1,6 @@
 from config import appname, config # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
-from consts import PLUGIN_NAME # type: ignore # noqa: N813
+from consts import PLUGIN_NAME, mined_heading
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -21,7 +21,7 @@ class SessionProgress(object):
 
         def __init__(self) -> None:
             self.activities_type_list = {0: "Unknown:\t", 1: "Ship Scans:\t", 2: "Bounties:\t", 3: "Powerplay Deliveries:", 4: "Donation Missions:", 5: "Scan Data Links:", 6: "Holoscreen Hacks:"
-                                         , 7: "Rare Goods:\t", 8: "Salvage:\t", 9 : "Cartography:\t", 10: "High Value Commodities:", 11: "Low Value Commodities:", 12: "Exobiology:\t", 13: "Mined:\t"}
+                                         , 7: "Rare Goods:\t", 8: "Salvage:\t", 9 : "Cartography:\t", 10: "High Value Commodities:", 11: "Low Value Commodities:", 12: "Exobiology:\t", 13: f"{mined_heading}"}
             self.activities: list[SessionProgress.Activities.Activity] = []
             self.mined_commodities: list[SessionProgress.Activities.MinedCommodity] = []
             for item in self.activities_type_list:

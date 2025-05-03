@@ -127,10 +127,7 @@ class RecentJournal:
     #Donation missions are usually retrospective and are not recorded in the journal until the mission is completed.
     @property
     def isDonationMissionMeritsSecond(self) -> bool:
-        #logger.debug(f"isdonation 0 event: {self.__journal_entries_log[0].get('event', '')}")
-        #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
-        #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
-        #logger.debug(f"isDonationMission recent journal entries: {self.__journal_entries_log}")
+
         try:
             if len(self.__journal_entries_log) < 2:
                 return False
@@ -138,8 +135,17 @@ class RecentJournal:
                 #Depending on server load powerplay merits events can come before mission completed or vice versa
                 return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
                         and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
-                        and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits") or (
-                        self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
+                        and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
+            return False
+                   
+    @property
+    def isDonationMissionMeritsFirst(self) -> bool:
+        try:
+            if len(self.__journal_entries_log) < 2:
+                return False
+            else:
+                return (self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
                             and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
                             and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
         except IndexError as e:

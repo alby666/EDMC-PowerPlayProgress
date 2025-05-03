@@ -2,15 +2,21 @@
 
 ## Summary
 
-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to track their power play progress:
+EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to track their power play progress:
+
+<img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
 * Visual progress between ranks
+* NEW: Links to Reddit and Discord sites for your Power
 * Total merits between dock/death events 
 * Merits gained per system
 * Tracks power play commodities collections & deliveries by the ton
   * Count per power play commodity type
   * Count by delivered system
 * Merits by Activity (work in progress)
+
+    <img src="screen_shot_by_activities.png">
+
   * Ship scans
   * Bounties
   * Power play deliveries
@@ -24,14 +30,16 @@ PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to track th
   * NEW: Low Value Commodities
   * NEW: Exobiology
   * NEW: Mined Commodities
-  * Unknowns (quite a few I haven't implemented yet but also some rando bugs!)
+  * Unknowns (a few Ody activities I haven't implemented yet!)
   * more to come....
 
-<img src="screen_shot.png"> <img src="screen_shot_dark.png">
+* Preferences to show/hide all recorded info
+
+  <img src="screen_shot_preferences.png" width="500" height="300">
 
 ### Merits by systems
 
-<img src="merits_menu_help.png">
+  <img src="merits_menu_help.png">
 
 1. The system name
 2. The merits you have earned in this system
