@@ -1,0 +1,11 @@
+{
+    "version":  "0.2.0",
+    "configurations":  [
+                           {
+                               "name":  "Attach to EDMarketConnector",
+                               "type":  "debugpy",
+                               "request":  "attach",
+                               "processId":  27364
+                           }
+                       ]
+}

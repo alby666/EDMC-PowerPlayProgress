@@ -18,29 +18,15 @@ from consts import PLUGIN_NAME, plugin_version
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
+from systemprogress import SystemProgress
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
-from config import appname # type: ignore # noqa: N813
+from config import appname, config # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 from theme import theme # type: ignore # noqa: N813
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
-
-class SystemProgress(object):
-    """
-    Represents the progress in a single system
-    """
-    system = ''
-    earnings = 0.0
-    controlling_power = ''
-    power_play_state = ''
-    power_play_state_control_progress = 0.0
-    power_play_state_reinforcement = 0.0
-    power_play_state_undermining = 0.0
-    orig_power_play_state_control_progress = 0.0
-    orig_power_play_state_reinforcement = 0.0
-    orig_power_play_state_undermining = 0.0
 
 class PowerPlayProgress:
     """
@@ -52,7 +38,18 @@ class PowerPlayProgress:
 
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
-        #self.click_count = tk.StringVar(value=str(config.get_int('click_counter_count')))
+
+        #Preferences declarations
+        self.options_view_totals = tk.BooleanVar(value=bool(config.get_bool('options_view_totals', default=True)))
+        self.options_view_merits_by_systems = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_systems', default=True)))
+        self.options_view_merits_by_activities = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_activities', default=True)))
+        self.options_view_detail_mined_commodities = tk.BooleanVar(value=bool(config.get_bool('options_view_detail_mined_commodities', default=True)))
+        self.options_view_powerplay_commodities = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities', default=True)))
+        self.options_view_powerplay_commodities_by_type = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_type', default=True)))
+        self.options_view_powerplay_commodities_by_system = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_system', default=True)))
+        self.options_view_export_format = tk.StringVar(value=config.get_str('options_view_export_format', default='Text'))
+        self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
+
         self.pb: ttk.Progressbar = ttk.Progressbar()
         self.value_label: tk.Label = tk.Label()
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -73,6 +70,10 @@ class PowerPlayProgress:
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
+        self.socials_link_discord: HyperlinkLabel = HyperlinkLabel()
+        self.socials_link_reddit: HyperlinkLabel = HyperlinkLabel()
+        self.socials_frame: tk.Frame = tk.Frame()
+        self.socials_power_label: tk.Label = tk.Label()
         self.flex_row = 7
         self.last_merits_gained = 0
         logger.info("PowerPlayProgress instantiated")
@@ -106,15 +107,75 @@ class PowerPlayProgress:
         :param is_beta: Whether or not EDMC is currently marked as in beta mode
         :return: The frame to add to the settings window
         """
-        #current_row = 0
         frame = nb.Frame(parent)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(sticky=tk.NSEW)
 
-        # setup our config in a "Click Count: number"
-        #nb.Label(frame, text='Click Count').grid(row=current_row)
-        #nb.EntryMenu(frame, textvariable=self.click_count).grid(row=current_row, column=1)
-        #current_row += 1  # Always increment our row counter, makes for far easier tkinter design.
+        HyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
+                    url='https://github.com/alby666/EDMC-PowerPlayProgress/releases', underline=True) \
+            .grid(row=0, padx=5, pady= 10, sticky=tk.W)    
+
+        HyperlinkLabel(frame, text="Report an Issue", background=nb.Label().cget('background'),
+                    url='https://github.com/alby666/EDMC-PowerPlayProgress/issues/new/choose', underline=True) \
+            .grid(row=0, column=1, padx=5, pady= 10, sticky=tk.E)    
+
+        notebook = ttk.Notebook(frame)    
+        notebook.add(self.get_display_prefs_tab(notebook), text='Display options')
+        notebook.grid(row=10, columnspan=2, pady=0, sticky=tk.NSEW)
+
         return frame
 
+    def get_display_prefs_tab(self, parent: nb.Notebook) -> nb.Frame:
+        frame = nb.Frame(parent)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(sticky=tk.NSEW)
+
+        row_count = 0
+        
+        nb.Checkbutton(frame, variable=self.options_view_socials, text="Show/hide Socials Links").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text="Show/hide Merits by Systems").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_activities, text="Show/hide Merits by Activities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text="Detail mined commodities").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text="Show/hide Powerplay commodities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_type, text="By type").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text="By system").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        row_count += 1
+
+        export_options = ['Text', 'Discord']
+        nb.Label(frame,
+            text='Copy to Clipboard format:\n' +
+                    '   Text - plain ascii text\n' +
+                    '   Discord - markup format, better suited for pasting to Discord\n',
+            justify=tk.LEFT) \
+        .grid(row=row_count, padx=5, column=0, sticky=tk.NW)
+        row_count+= 1
+        nb.OptionMenu(
+            frame,
+            self.options_view_export_format,
+            self.options_view_export_format.get(),
+            *export_options
+        ).grid(row=row_count, padx=15, sticky=tk.W)
+
+        return frame
+    
     def on_preferences_closed(self, cmdr: str, is_beta: bool) -> None:
         """
         on_preferences_closed is called by prefs_changed below.
@@ -126,7 +187,16 @@ class PowerPlayProgress:
         """
         # You need to cast to `int` here to store *as* an `int`, so that
         # `config.get_int()` will work for re-loading the value.
-        #config.set('click_counter_count', int(self.click_count.get()))
+        config.set('options_view_totals', bool(self.options_view_totals.get()))
+        config.set('options_view_merits_by_systems', bool(self.options_view_merits_by_systems.get()))
+        config.set('options_view_merits_by_activities', bool(self.options_view_merits_by_activities.get()))
+        config.set('options_view_detail_mined_commodities', bool(self.options_view_detail_mined_commodities.get()))
+        config.set('options_view_powerplay_commodities', bool(self.options_view_powerplay_commodities.get()))
+        config.set('options_view_powerplay_commodities_by_type', bool(self.options_view_powerplay_commodities_by_type.get()))
+        config.set('options_view_powerplay_commodities_by_system', bool(self.options_view_powerplay_commodities_by_system.get()))
+        config.set('options_view_export_format', str(self.options_view_export_format.get()))
+        config.set('options_view_socials', bool(self.options_view_socials.get()))
+        if self.total_merits > 0: self.Update_Ppp_Display()
 
     def NextRankDifference(self, currentRank: int) -> int:
         """
@@ -194,10 +264,6 @@ class PowerPlayProgress:
         for lbl in self.power_play_list_labels:
             self.frame.clipboard_append(lbl.cget("text"))
             self.frame.clipboard_append("\n")
-        #for sys in self.systems:
-        #    if sys.earnings > 0:
-        #        self.frame.clipboard_append("\t" + sys.system + ": " + str(sys.earnings))
-        #        self.frame.clipboard_append("\n")        
         self.frame.update()  # Ensure clipboard updates
 
     def copy_to_clipboard_discord(self):
@@ -209,11 +275,10 @@ class PowerPlayProgress:
         self.frame.clipboard_append("**" + self.total_session_merits.cget("text") + "**\n")
         self.frame.clipboard_append("**" + self.total_since_merits.cget("text") + "**\n")
         self.frame.clipboard_append("**" + self.total_prev_merits.cget("text") + "**\n")
-        #self.frame.clipboard_append("**Merits by Systems:** " + self.merits_by_systems_label.cget("text") + "\n\n")
         
         # Format labels in the power_play_list_labels list
         for lbl in self.power_play_list_labels:
-            if lbl.cget("text").left(1) != "\t":
+            if lbl.cget("text")[0] != "\t":
                 self.frame.clipboard_append(f"**" + lbl.cget("text") + "**\n")
             else:
                 self.frame.clipboard_append("- " + lbl.cget("text") + "\n")  # Use bullet points
@@ -236,13 +301,17 @@ class PowerPlayProgress:
         self.powerplay_level_label.grid(row=current_row, column=0, columnspan=2)
         current_row += 1
 
-        update_version = version_check()
-        #update_version = '0.9.1'  # for testing
-        if update_version != '':
-            url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
-            update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
-            update_link.grid(row=current_row, columnspan=2, sticky="N")
-            current_row += 1
+        try:
+            update_version = version_check()
+            #update_version = '0.9.1'  # for testing
+            if update_version != '':
+                url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
+                update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
+                update_link.grid(row=current_row, columnspan=2, sticky="N")
+                current_row += 1
+        except Exception as ex:
+            # Swallow any exceptions here, we don't want to crash the plugin if we can't check for updates
+            logger.error('Failed to check for updates', exc_info=ex)
 
         # progressbar
         self.pb = ttk.Progressbar(
@@ -256,40 +325,39 @@ class PowerPlayProgress:
         self.pb['value'] = 50
 
         # progress label
-        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8))
+        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8), justify=tk.CENTER)
         self.value_label.grid(column=0, row=current_row, columnspan=2)  # Top padding: 2 pixels
         current_row += 1
 
         #Socials
-        if self.current_session.power_play != '':
-            links = Socials.GetLinks(self.current_session.power_play)
-            socials_link_reddit = HyperlinkLabel(self.frame, text=f"Reddit", foreground="blue", cursor="hand2", url=links['reddit'])
-            socials_link_discord = HyperlinkLabel(self.frame, text=f"Discord", foreground="blue", cursor="hand2", url=links['discord'])
-            socials_link_reddit.grid(row=current_row, column=0, sticky="W")
-            socials_link_discord.grid(row=current_row, column=1, sticky="W")
-            current_row += 1
+        self.socials_frame = tk.Frame(self.frame)
+        self.socials_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        current_row += 1
+        self.socials_frame.grid_columnconfigure(0, weight=1)
+        self.socials_frame.grid_columnconfigure(1, weight=1)
+        self.socials_frame.grid_columnconfigure(2, weight=1)
+        self.socials_link_reddit = HyperlinkLabel(self.socials_frame, text=f"Reddit", foreground="blue", cursor="hand2")
+        self.socials_power_label = tk.Label(self.socials_frame, text="PowerPlay Progress", justify=tk.CENTER)
+        self.socials_link_discord = HyperlinkLabel(self.socials_frame, text=f"Discord", foreground="blue", cursor="hand2")
+        self.socials_link_reddit.grid(row=current_row, column=0)
+        self.socials_power_label.grid(row=current_row, column=1)
+        self.socials_link_discord.grid(row=current_row, column=2)
+        current_row += 1
 
         self.total_merits_label = tk.Label(self.frame, text=f"Total Merits: 345345")
-        self.total_merits_label.grid(row=current_row, column=0, sticky=tk.W)
         current_row += 1
-
         self.total_session_merits = tk.Label(self.frame, text=f"Total Merits this sessiona: 345345")
-        self.total_session_merits.grid(row=current_row, column=0, sticky=tk.W)
         current_row += 1
         self.total_since_merits = tk.Label(self.frame, text="Total Merits since last dock/death: 23423")
-        self.total_since_merits.grid(row=current_row, column=0, sticky="w")
         current_row += 1
         self.total_prev_merits = tk.Label(self.frame, text="Total Merits since previous dock/death: N/A")
-        self.total_prev_merits.grid(row=current_row, column=0, sticky="w")
         current_row += 1
 
         self.merits_by_systems_label = tk.Label(self.frame, text="Merits by Systems:")
-        self.merits_by_systems_label.grid(row=current_row, column=0, sticky="w")        
         current_row += 1
         self.flex_row = current_row
 
         self.powerplay_commodities_label = tk.Label(self.frame, text="PowerPlay Commodities (collected/delivered): 34/56")
-        self.powerplay_commodities_label.grid(row=current_row, column=0, sticky="w")
         current_row += 1
 
         self.copy_button = tk.Button(
@@ -297,20 +365,15 @@ class PowerPlayProgress:
             text="Copy Progress",
             command=self.copy_to_clipboard_text
         )
-        self.copy_button.grid(row=current_row, column=0, columnspan=2, sticky="W")
         current_row += 1
 
         #hide them for now
         self.pb.grid_remove()
         self.value_label.grid_remove()  
-        self.total_merits_label.grid_remove()
-        self.total_session_merits.grid_remove()
-        self.total_since_merits.grid_remove()
-        self.total_prev_merits.grid_remove()
-        self.merits_by_systems_label.grid_remove()
-        self.powerplay_commodities_label.grid_remove()
-        self.copy_button.grid_remove()
-
+        self.socials_link_reddit.grid_remove()
+        self.socials_link_discord.grid_remove()
+        self.socials_power_label.grid_remove()
+        
         return self.frame
 
     def Update_Ppp_Display(self) -> None:
@@ -319,13 +382,6 @@ class PowerPlayProgress:
         """
         logger.debug("Update_Ppp_Display event")
 
-        self.pb.grid()
-        self.value_label.grid()  
-        self.total_merits_label.grid()
-        self.total_session_merits.grid()
-        self.total_since_merits.grid()
-        self.total_prev_merits.grid()
-        
         # Get the system's default locale
         default_locale = locale.getlocale()
         # Set the locale to the system's default
@@ -333,21 +389,49 @@ class PowerPlayProgress:
         #localized_string = locale.format_string("%d", number, grouping=True)
 
         ## Update the progress bar and label with the current session data
+        self.pb.grid()
+        self.value_label.grid()  
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
         self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
         self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
         
-        total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
-        self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
+        #Socials
+        if self.options_view_socials.get() and self.current_session.power_play != '':
+            links = Socials.get_links(self.current_session.power_play)
+            self.socials_link_reddit.configure(url=links['reddit'])
+            self.socials_link_discord.configure(url=links['discord'])
+            self.socials_power_label.config(text=self.current_session.power_play)
+            self.socials_frame.grid()
+            self.socials_link_reddit.grid(column=0)
+            self.socials_power_label.grid(column=1)
+            self.socials_link_discord.grid(column=2)
+        else:
+            self.socials_link_reddit.grid_remove()
+            self.socials_link_discord.grid_remove()
+            self.socials_power_label.grid_remove()
+            self.socials_frame.grid_remove()
 
-        total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
-        self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
-        
-        total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
-        self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
-        
-        total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
-        self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
+        if self.options_view_totals.get():
+            self.total_merits_label.grid(column=0, sticky=tk.W)
+            self.total_session_merits.grid(column=0, sticky=tk.W)
+            self.total_since_merits.grid(column=0, sticky=tk.W)
+            self.total_prev_merits.grid(column=0, sticky=tk.W)
+            total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
+            self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
+
+            total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
+            self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
+            
+            total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
+            self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
+            
+            total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
+            self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
+        else:
+            self.total_merits_label.grid_remove()
+            self.total_session_merits.grid_remove()
+            self.total_since_merits.grid_remove()
+            self.total_prev_merits.grid_remove()
         
         ## Remove the previous labels from the list and destroy them
         for lbl in self.power_play_list_labels:
@@ -355,98 +439,113 @@ class PowerPlayProgress:
         self.power_play_list_labels.clear()
 
         cur_row = self.flex_row
-        self.merits_by_systems_label.grid(row=cur_row)
-        cur_row += 1
-        for sys in self.systems:
-            if sys.earnings > 0:
-                tab_spacing = '\t' if len(sys.system) < 12 else ''
-                control_state_change = ''
-                if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
-                    control_state_change = ' C\u2191' # Up arrow, increasing
-                elif sys.power_play_state_control_progress < sys.orig_power_play_state_control_progress:
-                    control_state_change = ' C\u2193' # Down arrow, decreasing
-                else:
-                    control_state_change = ' C\u2194' # Left-right arrow, no change
-                reinforcement_state_change = ''
-                if sys.power_play_state_reinforcement > sys.orig_power_play_state_reinforcement:
-                    reinforcement_state_change = ' R\u2191'
-                elif sys.power_play_state_reinforcement < sys.orig_power_play_state_reinforcement:
-                    reinforcement_state_change = ' R\u2193'
-                else:
-                    reinforcement_state_change = ' R\u2194'
-                undermining_state_change = ''
-                if sys.power_play_state_undermining > sys.orig_power_play_state_undermining:
-                    undermining_state_change = ' U\u2191'
-                elif sys.power_play_state_undermining < sys.orig_power_play_state_undermining:
-                    undermining_state_change = ' U\u2193'
-                else:
-                    undermining_state_change = ' U\u2194'
-
-                lbl = None
-                total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
-                if sys.controlling_power != '':
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
-                else:
-                    lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                theme.register(lbl)
-                self.power_play_list_labels.append(lbl)
+        if self.options_view_merits_by_systems.get() and len(self.systems) > 0:
+            if (self.total_merits - self.starting_merits) > 0:
+                self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
                 cur_row += 1
+            for sys in self.systems:
+                if sys.earnings > 0:
+                    tab_spacing = '\t' if len(sys.system) < 12 else ''
+                    control_state_change = ''
+                    if sys.power_play_state_control_progress > sys.orig_power_play_state_control_progress:
+                        control_state_change = ' C\u2191' # Up arrow, increasing
+                    elif sys.power_play_state_control_progress < sys.orig_power_play_state_control_progress:
+                        control_state_change = ' C\u2193' # Down arrow, decreasing
+                    else:
+                        control_state_change = ' C\u2194' # Left-right arrow, no change
+                    reinforcement_state_change = ''
+                    if sys.power_play_state_reinforcement > sys.orig_power_play_state_reinforcement:
+                        reinforcement_state_change = ' R\u2191'
+                    elif sys.power_play_state_reinforcement < sys.orig_power_play_state_reinforcement:
+                        reinforcement_state_change = ' R\u2193'
+                    else:
+                        reinforcement_state_change = ' R\u2194'
+                    undermining_state_change = ''
+                    if sys.power_play_state_undermining > sys.orig_power_play_state_undermining:
+                        undermining_state_change = ' U\u2191'
+                    elif sys.power_play_state_undermining < sys.orig_power_play_state_undermining:
+                        undermining_state_change = ' U\u2193'
+                    else:
+                        undermining_state_change = ' U\u2194'
 
-        if self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0:
-            self.powerplay_commodities_label.grid(row=cur_row)
+                    lbl = None
+                    total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
+                    if sys.controlling_power != '':
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
+                    else:
+                        lbl = tk.Label(self.frame, text=f"  - {sys.system}:\t{tab_spacing}{total_str}")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    theme.register(lbl)
+                    self.power_play_list_labels.append(lbl)
+                    cur_row += 1
+        else:
+            self.merits_by_systems_label.grid_remove()
+
+        if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
+            self.powerplay_commodities_label.grid(row=cur_row, sticky="w")
             self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected}/{self.current_session.total_commodities_delivered}")
             cur_row += 1
-            if self.current_session.total_commodities_delivered > 0:
-                lbl = tk.Label(self.frame, text=f"Delivered By type:")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl)
-                cur_row += 1
-                for commod in self.current_session.commodities_delivered_types:
-                    count = self.current_session.total_commodities_delivered_by_type(commod)
-                    if count > 0:
-                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
-                        lbl.grid(row=cur_row, column=0, sticky="w")
-                        self.power_play_list_labels.append(lbl)
-                        theme.register(lbl)
-                        cur_row += 1
 
-                lbl = tk.Label(self.frame, text=f"Delivered By system:")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl) 
-                cur_row += 1
-                for commod in self.current_session.commodities_delivered_systems:
-                    count = self.current_session.total_commodities_delivered_by_system(commod)
-                    if count > 0:
-                        tab_spacing = '\t' if len(commod) < 7 else ''
-                        lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
-                        lbl.grid(row=cur_row, column=0, sticky="w")
-                        self.power_play_list_labels.append(lbl)
-                        theme.register(lbl)
-                        cur_row += 1
+            if  self.current_session.total_commodities_delivered > 0:
+                if self.options_view_powerplay_commodities_by_type.get():
+                    lbl = tk.Label(self.frame, text=f"Delivered By type:")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl)
+                    cur_row += 1
+                    for commod in self.current_session.commodities_delivered_types:
+                        count = self.current_session.total_commodities_delivered_by_type(commod)
+                        if count > 0:
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{round(count, 0)}")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
 
-        lbl = tk.Label(self.frame, text=f"Merits by Activity:")
-        lbl.grid(row=cur_row, column=0, sticky="w")
-        self.power_play_list_labels.append(lbl)
-        cur_row += 1
-        for act in self.current_session.activities.activities:
-            if act.merits > 0: 
-                tab_spacing = '\t' if len(act.activity_type) < 12 else ''
-                lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
-                lbl.grid(row=cur_row, column=0, sticky="w")
-                self.power_play_list_labels.append(lbl)
-                theme.register(lbl)
-                cur_row += 1
-                if act.activity_type == 'Mined':
-                    for commod in self.current_session.activities.mined_commodities:
-                        lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
-                        lbl.grid(row=cur_row, column=0, sticky="w")
-                        self.power_play_list_labels.append(lbl)
-                        theme.register(lbl)
-                        cur_row += 1
+                if self.options_view_powerplay_commodities_by_system.get():
+                    lbl = tk.Label(self.frame, text=f"Delivered By system:")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl) 
+                    cur_row += 1
+                    for commod in self.current_session.commodities_delivered_systems:
+                        count = self.current_session.total_commodities_delivered_by_system(commod)
+                        if count > 0:
+                            tab_spacing = '\t' if len(commod) < 7 else ''
+                            lbl = tk.Label(self.frame, text=f"  - {commod}:\t{tab_spacing}{round(count, 0)}")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
+        else:
+            self.powerplay_commodities_label.grid_remove()
+
+        if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
+            lbl = tk.Label(self.frame, text=f"Merits by Activity:")
+            lbl.grid(row=cur_row, column=0, sticky="w")
+            self.power_play_list_labels.append(lbl)
+            cur_row += 1
+            for act in self.current_session.activities.activities:
+                if act.merits > 0: 
+                    tab_spacing = '\t' if len(act.activity_type) < 12 else ''
+                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}:\t{act.merits}")
+                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    self.power_play_list_labels.append(lbl)
+                    theme.register(lbl)
+                    cur_row += 1
+                    if act.activity_type == 'Mined':
+                        for commod in self.current_session.activities.mined_commodities:
+                            lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
+                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            self.power_play_list_labels.append(lbl)
+                            theme.register(lbl)
+                            cur_row += 1
             
-        self.copy_button.grid(row=cur_row)
+        #self.copy_button.grid(row=cur_row)
+        if self.options_view_export_format.get() == 'Text':
+            self.copy_button.config(command=self.copy_to_clipboard_text)
+        else:
+            self.copy_button.config(command=self.copy_to_clipboard_discord)
         cur_row += 1
+        self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
         theme.update(self.frame)
 
 ppp = PowerPlayProgress()
@@ -539,7 +638,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
         case 'location':
             """
             Update the current system.
-            'cmdr = "Byrne666", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
+            'cmdr = "xyz", is_beta = "False", system = "HIP 101587", station = "JBQ-90Q", event = "Location"'
             """
             #{"timestamp":"2025-04-08T20:23:51Z","event":"Location","DistFromStarLS":313.110615,"Docked":true,"StationName":"Pratchett Gateway","StationType":"Orbis","MarketID":3226027008,"StationFaction":{"Name":"Casual Crew"},"StationGovernment":"$government_Democracy;","StationGovernment_Localised":"Democracy","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Agri;","StationEconomy_Localised":"Agriculture","StationEconomies":[{"Name":"$economy_Agri;","Name_Localised":"Agriculture","Proportion":1.0}],"Taxi":false,"Multicrew":false,"StarSystem":"Tobala","SystemAddress":3618266663283,"StarPos":[23.34375,-42.46875,79.3125],"SystemAllegiance":"Independent","SystemEconomy":"$economy_Agri;","SystemEconomy_Localised":"Agriculture","SystemSecondEconomy":"$economy_Terraforming;","SystemSecondEconomy_Localised":"Terraforming","SystemGovernment":"$government_Democracy;","SystemGovernment_Localised":"Democracy","SystemSecurity":"$SYSTEM_SECURITY_medium;","SystemSecurity_Localised":"Medium Security","Population":4779808034,"Body":"Pratchett Gateway","BodyID":47,"BodyType":"Station",
             # "ControllingPower":"Denton Patreus","Powers":["Denton Patreus","Yuri Grom","Jerome Archer"],"PowerplayState":"Fortified","PowerplayStateControlProgress":0.278852,"PowerplayStateReinforcement":11942,"PowerplayStateUndermining":88,"Factions":[{"Name":"Revolutionary Tobala Democrats","FactionState":"None","Government":"Democracy","Influence":0.014985,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-22.0847},{"Name":"Tobala Vision Industries","FactionState":"None","Government":"Corporate","Influence":0.00999,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Traditional Tobala Nationalists","FactionState":"None","Government":"Dictatorship","Influence":0.011988,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Tobala Gold Posse","FactionState":"None","Government":"Anarchy","Influence":0.00999,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-18.7796},{"Name":"Tobala Jet Creative & Co","FactionState":"None","Government":"Corporate","Influence":0.034965,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-9.51682,"RecoveringStates":[{"State":"PublicHoliday","Trend":0}]},{"Name":"Loosely Organized Lunatics","FactionState":"None","Government":"Dictatorship","Influence":0.144855,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"RecoveringStates":[{"State":"Blight","Trend":0}]},{"Name":"Casual Crew","FactionState":"None","Government":"Democracy","Influence":0.773227,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"PendingStates":[{"State":"Expansion","Trend":0}]}],"SystemFaction":{"Name":"Casual Crew"}}
@@ -638,21 +737,11 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'powerplaycollect':
             #{"timestamp":"2025-04-05T11:29:18Z","event":"PowerplayCollect","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            logger.debug(
-                f'powerplaycollect - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
-                f', system = "{system}", station = "{station}"'
-                f', event = "{entry["event"]}"'
-                )
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, entry["Count"], 0))
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            logger.debug(
-                f'powerplaydeliver - cmdr = "{cmdrname}", is_beta = "{is_beta}"'
-                f', system = "{system}", station = "{station}"'
-                f', event = "{entry["event"]}"'
-                )
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
 
@@ -705,24 +794,17 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
             ppp.last_merits_gained = entry["MeritsGained"]
         case 'powerplayrank':
-            logger.debug("PowerplayRank event")
             #{"timestamp":"2025-03-29T10:47:35Z","event":"PowerplayRank","Power":"Jerome Archer","Rank":139}
             new_event = True
             ppp.current_session.power_play_rank = entry["Rank"]
 
         case 'powerplay':
-            logger.debug("Powerplay event")
             #{"timestamp":"2025-03-23T08:39:26Z","event":"Powerplay","Power":"Jerome Archer","Rank":138,"Merits":1084487,"TimePledged":12319106}
             new_event = True
             ppp.current_session.power_play = entry["Power"]
             ppp.current_session.power_play_rank = int(entry["Rank"])
             ppp.starting_merits = int(entry["Merits"])
             ppp.total_merits = int(entry["Merits"])
-
-            logger.debug(
-                    f'cmdr = "{cmdrname}", power = "{entry["Power"]}"'
-                    f', rank = "{entry["Rank"]}", merits = "{entry["Merits"]}"'
-            )
 
             if system != '':
                 ppp.current_system = SystemProgress()
@@ -735,7 +817,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
-            
+           
             new_event = True
             #logger.debug(f"Mission completed event: {entry}")
             #logger.debug(f"Mission completed event name: {entry.get('Name', '')}")

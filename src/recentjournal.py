@@ -101,23 +101,28 @@ class RecentJournal:
     @property
     def isBounty(self) -> bool:
         #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
-        if len(self.__journal_entries_log) < 2:
+        try:
+            if len(self.__journal_entries_log) < 2:
+                return False
+            else:
+                return ((self.__journal_entries_log[1].get("event", "").lower() == "bounty" 
+                        or self.__journal_entries_log[2].get("event", "").lower() == "bounty")
+                        and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
             return False
-        else:
-            return ((self.__journal_entries_log[1].get("event", "").lower() == "bounty" 
-                     or self.__journal_entries_log[2].get("event", "").lower() == "bounty")
-                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-    
+
     @property
     def isPowerPlayDelivery(self) -> bool:
         #logger.debug(f"isPowerPlayDelivery recent journal entries: {self.__journal_entries_log}")
-        if len(self.__journal_entries_log) < 3:
+        try:
+            if len(self.__journal_entries_log) < 3:
+                return False
+            else:
+                return ((self.__journal_entries_log[1].get("event", "").lower() == "powerplaydeliver" 
+                        or self.__journal_entries_log[2].get("event", "").lower() == "powerplaydeliver")
+                        and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
             return False
-        else:
-            return ((self.__journal_entries_log[1].get("event", "").lower() == "powerplaydeliver" 
-                    or self.__journal_entries_log[2].get("event", "").lower() == "powerplaydeliver")
-                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-
     
     #Donation missions are usually retrospective and are not recorded in the journal until the mission is completed.
     @property
@@ -126,97 +131,118 @@ class RecentJournal:
         #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
         #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
         #logger.debug(f"isDonationMission recent journal entries: {self.__journal_entries_log}")
-        if len(self.__journal_entries_log) < 2:
+        try:
+            if len(self.__journal_entries_log) < 2:
+                return False
+            else:
+                #Depending on server load powerplay merits events can come before mission completed or vice versa
+                return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
+                        and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
+                        and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits") or (
+                        self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
+                            and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
+                            and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
+        except IndexError as e:
             return False
-        else:
-            #Depending on server load powerplay merits events can come before mission completed or vice versa
-            return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
-                    and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
-                    and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits")
-    @property
-    def isDonationMissionMeritsFirst(self) -> bool:
-        #logger.debug(f"isdonation 0 event: {self.__journal_entries_log[0].get('event', '')}")
-        #logger.debug(f"isdonation 0 name: {self.__journal_entries_log[0].get('Name', '')}")
-        #logger.debug(f"isdonation 1 event: {self.__journal_entries_log[1].get('event', '')}")
-        #logger.debug(f"isDonationMission recent journal entries: {self.__journal_entries_log}")
-        if len(self.__journal_entries_log) < 2:
-            return False
-        else:
-            return (self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
-                        and self.__journal_entries_log[1].get("event", "").lower() == "missioncompleted"
-                        and re.match(self.donation_missions, self.__journal_entries_log[1].get("Name", "")))
 
     @property
     def isScanDataLinks(self) -> bool:
         #logger.debug(f"isScanDataLinks recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
-                ((self.__journal_entries_log[1].get("event", "") == "DataScanned" and self.__journal_entries_log[1].get("Type", "") == "$Datascan_ShipUplink;")
-                    or (self.__journal_entries_log[2].get("event", "") == "DataScanned" and self.__journal_entries_log[2].get("Type", "") == "$Datascan_ShipUplink;"))
-                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "DataScanned" and self.__journal_entries_log[1].get("Type", "") == "$Datascan_ShipUplink;")
+                        or (self.__journal_entries_log[2].get("event", "") == "DataScanned" and self.__journal_entries_log[2].get("Type", "") == "$Datascan_ShipUplink;"))
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
+            return False
         
     @property
     def isHoloscreenHack(self) -> bool:
         #logger.debug(f"isHoloscreenHack recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
-                ((self.__journal_entries_log[1].get("event", "") == "HoloscreenHacked"
-                    or self.__journal_entries_log[2].get("event", "") == "HoloscreenHacked")
-                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "HoloscreenHacked"
+                        or self.__journal_entries_log[2].get("event", "") == "HoloscreenHacked")
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        except IndexError as e:
+            return False
 
     @property
     def isRareGoods(self) -> bool:
         #logger.debug(f"isRareGoods recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
-                ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
-                    or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
-                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
-
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
+                        or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        except IndexError as e:
+            return False
+        
     @property
     def isSalvage(self) -> bool:
         #logger.debug(f"isSalvage recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
-                ((self.__journal_entries_log[1].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[1].get("Name", "") in self.salvage_types)
-                    or (self.__journal_entries_log[2].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[2].get("Name", "") in self.salvage_types)
-                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
-
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[1].get("Name", "") in self.salvage_types)
+                        or (self.__journal_entries_log[2].get("event", "") == "SearchAndRescue" and self.__journal_entries_log[2].get("Name", "") in self.salvage_types)
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        except IndexError as e:
+            return False
+        
     @property
     def isCartography(self) -> bool:
         #logger.debug(f"isCartography recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
-                ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData" or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData")
-                 or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
-                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
-
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData" or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData")
+                    or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        except IndexError as e:
+            return False
+        
     @property
     def isHighValueCommditySale(self) -> bool:
         #logger.debug(f"isHighValueCommditySale recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
                 (self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[1].get("SellPrice", 1) / self.__journal_entries_log[1].get("AvgPricePaid", 1)) >= 1.4)
                  or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) > 0 and ((self.__journal_entries_log[2].get("SellPrice", 1) / self.__journal_entries_log[2].get("AvgPricePaid", 1)) >= 1.4)
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")))
-
+        except IndexError as e:
+            return False
+        
     @property
     def isLowValueCommditySale(self) -> bool:
         #logger.debug(f"isLowValueCommditySale recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
+        try: 
+            return (len(self.__journal_entries_log) > 2 and 
                 self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("SellPrice", 0) <= 500
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-
+        except IndexError as e:
+            return False
+        
     @property
     def isExobiology(self) -> bool:
         #logger.debug(f"isExobiology recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and 
+        try: 
+            return (len(self.__journal_entries_log) > 2 and 
                 (self.__journal_entries_log[1].get("event", "") == "SellOrganicData"
                  or self.__journal_entries_log[2].get("event", "") == "SellOrganicData")
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-
+        except IndexError as e:
+            return False
+        
     @property
     def isMined(self) -> bool:
         #logger.debug(f"isMined recent journal entries: {self.__journal_entries_log}")
-        return (len(self.__journal_entries_log) > 2 and
+        try: 
+            return (len(self.__journal_entries_log) > 2 and
                 ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("AvgPricePaid", 0) == 0)
                  or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("AvgPricePaid", 0) == 0))
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-
+        except IndexError as e:
+            return False
+    
     def get_mined_commodity(self) -> str:
         #logger.debug(f"get_mind_commodity recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) > 2:
