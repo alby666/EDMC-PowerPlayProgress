@@ -42,7 +42,25 @@
             "type": "shell",
             "command": "notepad",
             "args": [
-                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\logs\\EDMarketConnector-debug.log"
+                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\logs\\EDMarketConnector.log"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Start Debug Session",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "-m",
+                "debugpy",
+                "--listen",
+                "5678",
+                "--wait-for-client",
+                "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-PowerPlayProgress\\load.py"
             ],
             "problemMatcher": [],
             "group": {
@@ -55,7 +73,8 @@
             "type": "shell",
             "dependsOn": [
                 "Copy files to target folder",
-                "Restart EDMarketConnector"
+                "Restart EDMarketConnector",
+                "Open EDMC Log"
             ],
             "problemMatcher": [],
             "group": {

@@ -29,7 +29,8 @@ class Socials:
                 "reddit": "https://www.reddit.com/r/EliteWinters/"
             },
             "Jerome Archer": {
-                "discord": "https://discord.gg/8QjHwMF",
+                #"discord": "https://discord.gg/8QjHwMF",
+                "discord": "discord://8QjHwMF",
                 "reddit": "https://www.reddit.com/r/EliteArcher/"
             },
             "Li Yong-Rui": {
