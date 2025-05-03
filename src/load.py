@@ -38,6 +38,7 @@ class PowerPlayProgress:
 
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
+
         #Preferences declarations
         self.options_view_totals = tk.BooleanVar(value=bool(config.get_bool('options_view_totals', default=True)))
         self.options_view_merits_by_systems = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_systems', default=True)))
