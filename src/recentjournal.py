@@ -75,6 +75,7 @@ class RecentJournal:
 
     def __init__(self) -> None:
         self.__journal_entries_log: list = []
+        self.__on_foot: bool = False
 
     def add_entry(self, entry: dict) -> None:
         if entry['event'].lower() not in self.noise:
@@ -83,6 +84,15 @@ class RecentJournal:
         # Keep only the last HISTORY_DEPTH entries
         if len(self.__journal_entries_log) > self.HISTORY_DEPTH:
             self.__journal_entries_log.pop()
+
+        if entry["event"] == "Disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
+        if entry["event"] == "Embark": self.__on_foot = False
+
+    # On foot entries are not recorded in the journal currently so the best we can do is group them together
+    @property
+    def isOnFoot(self) -> bool:
+        logger.debug(f"IsOnFoot: {self.__on_foot}")
+        return self.__on_foot
 
     @property
     def isScan(self) -> bool:

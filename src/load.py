@@ -742,6 +742,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
+            #this might be something to deal with later:
+            #{"timestamp":"2025-05-04T09:48:23Z","event":"DeliverPowerMicroResources","TotalCount":1,"MicroResources":[{"Name":"powerpropagandadata","Name_Localised":"Power Political Data","Category":"ata","Count":1}],"MarketID":3930408705}
+            #The mnarketid in the above refers to the stronghold carrier and not teh originating system/settelement
+            #{"timestamp":"2025-05-04T09:48:23Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"powerpropagandadata","Type_Localised":"Power Political Data","Count":1}
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
 
@@ -788,6 +792,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isLowValueCommditySale: ppp.current_session.activities.add_low_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"], ppp.recent_journal_log.get_mined_commodity(), ppp.recent_journal_log.get_mined_tonnage())
+            elif ppp.recent_journal_log.isOnFoot: ppp.current_session.activities.add_on_foot_merits(entry["MeritsGained"])
             else: 
                 ppp.recent_journal_log.writelog()
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
