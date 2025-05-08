@@ -1,34 +1,28 @@
 import tkinter as tk
+from src.canvasprogressbar import CanvasProgressBar
 
-from src.myProgressBar import ProgressBar
+# Example Usage
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Canvas-Based Progress Bar")
 
-# Create the main window
-root = tk.Tk()
-root.title("Tkinter Grid Example")
+    progress_bar = CanvasProgressBar(root)
+    progress_bar.canvas.grid(row=0, column=0, padx=20, pady=20)  # Ensuring it's placed with grid()
 
-# Create a frame to contain the labels
-frame = tk.Frame(root)
-frame.grid(row=0, column=0, padx=20, pady=20)
+    lbl = tk.Label(root, text=f"colour: {progress_bar.fg}")
+    lbl.grid(row=3, column=0, pady=10)
 
-# Create two labels
-label1 = tk.Label(frame, text="Label 1", font=("Arial", 14))
-label2 = tk.Label(frame, text="Label 2", font=("Arial", 14))
+    def increase_progress():
+        for i in range(101):
+            root.after(i * 20, lambda v=i: progress_bar.update_progress(v))
 
-# Place the labels in the frame using grid
-label1.grid(row=0, column=0, padx=10, pady=5)
-label2.grid(row=0, column=1, padx=10, pady=5)
+    def change_colour():
+        # Toggle the color between green and orange
+        colour = "orange" if progress_bar.canvas.itemcget(progress_bar.progress_rect, "fill") == "green" else "green"
+        progress_bar.set_bar_colour(colour)
+        lbl.config(text=f"colour: {colour}")
 
-pb = ProgressBar(frame, orient="horizontal", length=200, mode="determinate")
-
-#tk.Button(frame, text="Button 1", command=lambda: print("Button 1 clicked")).grid(row=1, column=0, padx=10, pady=5)
-
-pb.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
-pb.theme_option = 2
-pb['value'] = 50 
-pb.update_theme()
-
-# Center the frame in the main window
-frame.grid_columnconfigure(0, weight=1)
-frame.grid_columnconfigure(1, weight=1)
-
-root.mainloop()
+    tk.Button(root, text="Start Progress", command=increase_progress).grid(row=1, column=0, pady=10)
+    tk.Button(root, text="Change Colour", command=change_colour).grid(row=2, column=0, pady=10)
+    
+    root.mainloop()
