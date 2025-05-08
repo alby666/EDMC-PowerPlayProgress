@@ -26,6 +26,7 @@ class CanvasProgressBar:
 
     def update_progress(self, value):
         """Update progress bar and text label (value should be between 0 and 100)."""
+        if value > 100: value = 100
         new_width = (self.width * value) / 100
         self.canvas.coords(self.progress_rect, 0, 0, new_width, self.height)
         self.canvas.itemconfig(self.text_label, text=f"{value}%")
