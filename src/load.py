@@ -11,7 +11,6 @@ import math
 import locale
 import requests
 import semantic_version  # type: ignore # noqa: N813
-import re
 import tkinter as tk
 from tkinter import ttk
 from consts import PLUGIN_NAME, plugin_version, mined_heading
@@ -20,6 +19,7 @@ from sessionprogress import SessionProgress
 from socials import Socials
 from systemprogress import SystemProgress
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
+from canvasprogressbar import CanvasProgressBar
 
 import myNotebook as nb  # type: ignore # noqa: N813
 from config import appname, config # type: ignore # noqa: N813
@@ -36,6 +36,8 @@ class PowerPlayProgress:
     the number directly.
     """
 
+    bar_colours = ['Green', 'Orange', 'Match theme']
+    
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
 
@@ -48,10 +50,11 @@ class PowerPlayProgress:
         self.options_view_powerplay_commodities_by_type = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_type', default=True)))
         self.options_view_powerplay_commodities_by_system = tk.BooleanVar(value=bool(config.get_bool('options_view_powerplay_commodities_by_system', default=True)))
         self.options_view_export_format = tk.StringVar(value=config.get_str('options_view_export_format', default='Text'))
+        self.options_view_bar_colour = tk.StringVar(value=config.get_str('options_view_bar_colour', default=self.bar_colours[2]))
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
 
-        self.pb: ttk.Progressbar = ttk.Progressbar()
-        self.value_label: tk.Label = tk.Label()
+        self.pb: CanvasProgressBar = None
+        #self.value_label: tk.Label = tk.Label()
         self.powerplay_level_label: tk.Label = tk.Label()
         self.powerplay_level_value = 0
         self.current_session: SessionProgress = SessionProgress()
@@ -136,11 +139,11 @@ class PowerPlayProgress:
         
         nb.Checkbutton(frame, variable=self.options_view_socials, text="Show/hide Socials Links").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text="Show/hide Merits by Systems").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
@@ -148,7 +151,7 @@ class PowerPlayProgress:
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text="Detail mined commodities").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text="Show/hide Powerplay commodities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
@@ -156,14 +159,14 @@ class PowerPlayProgress:
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text="By system").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
         row_count += 1
 
         export_options = ['Text', 'Discord']
         nb.Label(frame,
             text='Copy to Clipboard format:\n' +
                     '   Text - plain ascii text\n' +
-                    '   Discord - markup format, better suited for pasting to Discord\n',
+                    '   Discord - markup format, better suited for pasting to Discord',
             justify=tk.LEFT) \
         .grid(row=row_count, padx=5, column=0, sticky=tk.NW)
         row_count+= 1
@@ -173,6 +176,21 @@ class PowerPlayProgress:
             self.options_view_export_format.get(),
             *export_options
         ).grid(row=row_count, padx=15, sticky=tk.W)
+        row_count += 1
+        
+        nb.Label(frame,
+            text='Progress bar colour:\n' +
+                    '   Green - always green\n' +
+                    '   Orange - always orange\n' +
+                    '   Match theme - match the EDMC theme colour',
+            justify=tk.LEFT) \
+        .grid(row=row_count-2, column=1, padx=5, sticky=tk.NW)
+        nb.OptionMenu(
+            frame,
+            self.options_view_bar_colour,
+            self.options_view_bar_colour.get(),
+            *self.bar_colours
+        ).grid(row=row_count-1, column=1, padx=15, sticky=tk.W)
 
         return frame
     
@@ -195,7 +213,14 @@ class PowerPlayProgress:
         config.set('options_view_powerplay_commodities_by_type', bool(self.options_view_powerplay_commodities_by_type.get()))
         config.set('options_view_powerplay_commodities_by_system', bool(self.options_view_powerplay_commodities_by_system.get()))
         config.set('options_view_export_format', str(self.options_view_export_format.get()))
+        config.set('options_view_bar_colour', str(self.options_view_bar_colour.get()))
         config.set('options_view_socials', bool(self.options_view_socials.get()))
+        
+        if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
+            self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
+        else:
+            self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
+        
         if self.total_merits > 0: self.Update_Ppp_Display()
 
     def NextRankDifference(self, currentRank: int) -> int:
@@ -314,19 +339,14 @@ class PowerPlayProgress:
             logger.error('Failed to check for updates', exc_info=ex)
 
         # progressbar
-        self.pb = ttk.Progressbar(
+        self.pb = CanvasProgressBar(
             self.frame,
-            orient='horizontal',
-            mode='determinate',
-            length=230
+            width=230,
+            fg="green" if config.get_int("theme") == 0 else "orange"
         )
         # place the progressbar
-        self.pb.grid(column=0, row=current_row, columnspan=3)
-        self.pb['value'] = 50
-
-        # progress label
-        self.value_label = tk.Label(self.frame, text='50 %', font=("Arial", 8), justify=tk.CENTER)
-        self.value_label.grid(column=0, row=current_row, columnspan=2)  # Top padding: 2 pixels
+        self.pb.canvas.grid(column=0, row=current_row, columnspan=3)
+        self.pb.update_progress(50)
         current_row += 1
 
         #Socials
@@ -368,8 +388,8 @@ class PowerPlayProgress:
         current_row += 1
 
         #hide them for now
-        self.pb.grid_remove()
-        self.value_label.grid_remove()  
+        self.pb.canvas.grid_remove()
+        #self.value_label.grid_remove()  
         self.socials_link_reddit.grid_remove()
         self.socials_link_discord.grid_remove()
         self.socials_power_label.grid_remove()
@@ -380,21 +400,23 @@ class PowerPlayProgress:
         """
         Update the display with the current session and system data.
         """
-        logger.debug("Update_Ppp_Display event")
+        #logger.debug(f"Update_Ppp_Display event - progress - {round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)}")
 
         # Get the system's default locale
         default_locale = locale.getlocale()
         # Set the locale to the system's default
         locale.setlocale(locale.LC_ALL, default_locale[0])
-        #localized_string = locale.format_string("%d", number, grouping=True)
 
         ## Update the progress bar and label with the current session data
-        self.pb.grid()
-        self.value_label.grid()  
+        self.pb.canvas.grid()
         self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
-        self.pb['value'] = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
-        self.value_label.config(text=str(round(self.pb['value'], 2))+' %')
+        self.pb.update_progress(round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2))
         
+        if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
+            self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
+        else: # orange or green
+            self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
+
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
             links = Socials.get_links(self.current_session.power_play)

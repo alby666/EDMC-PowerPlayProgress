@@ -6,7 +6,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 <img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
-* Visual progress between ranks
+* IMPROVED: Visual progress between ranks, cleared progress bar and customisible
 * NEW: Links to Reddit and Discord sites for your Power
 * Total merits between dock/death events 
 * Merits gained per system
@@ -21,21 +21,22 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Bounties
   * Power play deliveries
   * Donation and aid missions
-  * NEW: Scan Data Links
-  * NEW: Holoscreen Hacks
-  * NEW: Rare Goods
-  * NEW: Salvage
-  * NEW: Cartograhy
-  * NEW: High Value Commodities
-  * NEW: Low Value Commodities
-  * NEW: Exobiology
-  * NEW: Mined Commodities
-  * NEW: on Foot activities
+  * Scan Data Links
+  * Holoscreen Hacks
+  * Rare Goods
+  * Salvage
+  * Cartograhy
+  * High Value Commodities
+  * Low Value Commodities
+  * Exobiology
+  * Mined Commodities
+  * On Foot activities
   * Unknowns (the journals have limited infomation so some will slip through the net when assigning them!)
 
   Will continue to improve the tracking and correct assignment to the correct systems but the current journal info is a limiting factor... :(
 
-* NEW: Preferences to show/hide all recorded info
+* Preferences to show/hide all recorded info
+  * NEW: Customisble progress bar colour, green, orange or match the EDMC theme
 
   <img src="screen_shot_preferences.png" width="500" height="300">
 
