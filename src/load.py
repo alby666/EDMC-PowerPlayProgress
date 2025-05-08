@@ -216,10 +216,10 @@ class PowerPlayProgress:
         config.set('options_view_bar_colour', str(self.options_view_bar_colour.get()))
         config.set('options_view_socials', bool(self.options_view_socials.get()))
         
-        if self.options_view_export_format.get() == self.bar_colours[2]: # Match theme
+        if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
         else:
-            self.pb.set_bar_colour(self.options_view_export_format.get())
+            self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
         
         if self.total_merits > 0: self.Update_Ppp_Display()
 
@@ -415,7 +415,7 @@ class PowerPlayProgress:
         if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
         else: # orange or green
-            self.pb.set_bar_colour(self.options_view_bar_colour.get().tolower())
+            self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
 
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
