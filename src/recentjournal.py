@@ -32,13 +32,7 @@ Ship scans	                    Scan ships and wakes with built-in scanner	      
 Upload data	                    (Ody) Upload powerplay malware	
 """
 
-from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
-from consts import PLUGIN_NAME, plugin_version
-from config import appname # type: ignore # noqa: N813
-
 import re
-
-logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
 class RecentJournal:
 
@@ -91,7 +85,7 @@ class RecentJournal:
     # On foot entries are not recorded in the journal currently so the best we can do is group them together
     @property
     def isOnFoot(self) -> bool:
-        logger.debug(f"IsOnFoot: {self.__on_foot}")
+        #logger.debug(f"IsOnFoot: {self.__on_foot}")
         return self.__on_foot
 
     @property
@@ -206,12 +200,13 @@ class RecentJournal:
             return False
         
     @property
-    def isCartography(self) -> bool:
+    def isSingleCartography(self) -> bool:
         #logger.debug(f"isCartography recent journal entries: {self.__journal_entries_log}")
+        #or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData"
         try:
             return (len(self.__journal_entries_log) > 2 and 
-                    ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData" or self.__journal_entries_log[1].get("event", "") == "MultiSellExplorationData")
-                    or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData" or self.__journal_entries_log[2].get("event", "") == "MultiSellExplorationData")
+                    ((self.__journal_entries_log[1].get("event", "") == "SellExplorationData")
+                    or (self.__journal_entries_log[2].get("event", "") == "SellExplorationData")
                     and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
         except IndexError as e:
             return False
@@ -277,10 +272,47 @@ class RecentJournal:
                 return self.__journal_entries_log[2].get("Count", 0)
         return 0
 
-    #Purely for debugging purposes for unknown activities
-    def writelog(self) -> None:
+    def get_multiple_cartography(self) -> int:
+        #logger.debug(f"get_multiple_cartography recent journal entries: {self.__journal_entries_log}")
+        return self._get_multi_entries_merits("MultiSellExplorationData")
+    
+    def _get_multi_entries_merits(self, target_event: str) -> int:
+        multiple_target_event = False
         for entry in self.__journal_entries_log:
-            logger.debug(f"Recent Journal Entry: {entry}")
+            if entry.get("event", "").lower() == target_event.lower():
+                multiple_target_event = True
+                break
+
+        if multiple_target_event:
+            """
+            Loops through the __journal_entries_log and totals the MeritsGained for consecutive
+            'powerplaymerits' events. Skips initial non-'powerplaymerits' events and stops when
+            encountering any other event except 'target_event'.
+            """
+            total_merits = 0
+            counting = False  # Flag to start counting once a 'powerplaymerits' event is found
+            target_event_found = False  # Flag to check if target_event is found
+            log_entry = None
+
+            for log_entry in self.__journal_entries_log:
+                event = log_entry.get("event", "").lower()
+
+                if event == "powerplaymerits":
+                    counting = True  # Start counting once a 'powerplaymerits' event is found
+                    total_merits += log_entry.get("MeritsGained", 0)
+                elif event == target_event.lower():
+                    if counting:
+                        target_event_found = True
+                        continue  # Allow 'target_event' while counting
+                elif counting and not target_event_found:
+                        total_merits = 0
+                        break  # Stop counting if a non-'powerplaymerits' and non-'target_event' event is found
+                else:
+                    if counting:
+                        break  # Stop counting if any other event is found
+            return total_merits
+        else:
+            return 0
 
     """
     @property
