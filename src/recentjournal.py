@@ -72,15 +72,17 @@ class RecentJournal:
         self.__on_foot: bool = False
 
     def add_entry(self, entry: dict) -> None:
+
+        if entry.get("event", "").lower() == "supercruiseentry": self.__on_foot = False #In case the cmdr dies while on foot
+        if entry["event"] == "Disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
+        if entry["event"] == "Embark": self.__on_foot = False
+
         if entry['event'].lower() not in self.noise:
             #logger.debug(f"journal entries type: {type(self.__journal_entries_log)}")
             self.__journal_entries_log.insert(0, entry)
         # Keep only the last HISTORY_DEPTH entries
         if len(self.__journal_entries_log) > self.HISTORY_DEPTH:
             self.__journal_entries_log.pop()
-
-        if entry["event"] == "Disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
-        if entry["event"] == "Embark": self.__on_foot = False
 
     # On foot entries are not recorded in the journal currently so the best we can do is group them together
     @property
