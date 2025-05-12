@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 import locale
-
+import re
 import requests
 import semantic_version  # type: ignore # noqa: N813
 import tkinter as tk
@@ -18,7 +18,7 @@ from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
 from systemprogress import SystemProgress
-from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
+from multiHyperlinkLabel import MultiHyperlinkLabel
 from canvasprogressbar import CanvasProgressBar
 
 import myNotebook as nb  # type: ignore # noqa: N813
@@ -63,7 +63,7 @@ class PowerPlayProgress:
         self.total_merits = 0
         self.systems: list[SystemProgress] = []
         self.power_play_list_labels: list[tk.Label] = []
-        self.power_play_hpl_labels: list[HyperlinkLabel] = []
+        self.power_play_hpl_labels: list[MultiHyperlinkLabel] = []
         self.current_system: SystemProgress = SystemProgress()
         self.frame: tk.Frame = tk.Frame()
         self.total_merits_label: tk.Label = tk.Label()    
@@ -74,8 +74,8 @@ class PowerPlayProgress:
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
-        self.socials_link_discord: HyperlinkLabel = HyperlinkLabel()
-        self.socials_link_reddit: HyperlinkLabel = HyperlinkLabel()
+        self.socials_link_discord: MultiHyperlinkLabel = MultiHyperlinkLabel()
+        self.socials_link_reddit: MultiHyperlinkLabel = MultiHyperlinkLabel()
         self.socials_frame: tk.Frame = tk.Frame()
         self.mertits_by_system_frame: tk.Frame = tk.Frame()
         self.progressbar_frame: tk.Frame = tk.Frame()
@@ -120,11 +120,11 @@ class PowerPlayProgress:
         frame.columnconfigure(1, weight=1)
         frame.grid(sticky=tk.NSEW)
 
-        HyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
+        MultiHyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
                     url='https://github.com/alby666/EDMC-PowerPlayProgress/releases', underline=True) \
             .grid(row=0, padx=5, pady= 10, sticky=tk.W)    
 
-        HyperlinkLabel(frame, text="Report an Issue", background=nb.Label().cget('background'),
+        MultiHyperlinkLabel(frame, text="Report an Issue", background=nb.Label().cget('background'),
                     url='https://github.com/alby666/EDMC-PowerPlayProgress/issues/new/choose', underline=True) \
             .grid(row=0, column=1, padx=5, pady= 10, sticky=tk.E)    
 
@@ -356,7 +356,7 @@ class PowerPlayProgress:
             #update_version = '0.9.1'  # for testing
             if update_version != '':
                 url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
-                update_link = HyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
+                update_link = MultiHyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
                 update_link.grid(row=current_row, columnspan=2, sticky="N")
                 current_row += 1
         except Exception as ex:
@@ -384,9 +384,9 @@ class PowerPlayProgress:
         self.socials_frame.grid_columnconfigure(0, weight=1)
         self.socials_frame.grid_columnconfigure(1, weight=1)
         self.socials_frame.grid_columnconfigure(2, weight=1)
-        self.socials_link_reddit = HyperlinkLabel(self.socials_frame, text=f"Reddit", foreground="blue", cursor="hand2")
+        self.socials_link_reddit = MultiHyperlinkLabel(self.socials_frame, text=f"Reddit", foreground="blue", cursor="hand2")
         self.socials_power_label = tk.Label(self.socials_frame, text="PowerPlay Progress", justify=tk.CENTER)
-        self.socials_link_discord = HyperlinkLabel(self.socials_frame, text=f"Discord", foreground="blue", cursor="hand2")
+        self.socials_link_discord = MultiHyperlinkLabel(self.socials_frame, text=f"Discord", foreground="blue", cursor="hand2")
         self.socials_link_reddit.grid(row=current_row, column=0)
         self.socials_power_label.grid(row=current_row, column=1)
         self.socials_link_discord.grid(row=current_row, column=2)
@@ -541,18 +541,18 @@ class PowerPlayProgress:
                         lbl = None
                         total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
                         logger.debug(f"System: {sys.system} - {self.system_url(sys.system)}")
-                        hypl = HyperlinkLabel(self.mertits_by_system_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name='system', text=f"  - {sys.system}")
+                        hypl = MultiHyperlinkLabel(self.mertits_by_system_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', sys.system)}", text=f"  - {sys.system}")
                         hypl.grid(row=cur_row, column=0, sticky="w")
+                        theme.register(hypl)
+                        self.power_play_hpl_labels.append(hypl)
+                        hypl = None                        
                         if sys.controlling_power != '':
                             lbl = tk.Label(self.mertits_by_system_frame, text=f"{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
                         else:
                             lbl = tk.Label(self.mertits_by_system_frame, text=f"{total_str}")
                         lbl.grid(row=cur_row, column=1, columnspan=2, sticky="w")
                         theme.register(lbl)
-                        theme.register(hypl)
                         self.power_play_list_labels.append(lbl)
-                        self.power_play_hpl_labels.append(hypl)
-                        hypl = None
                         cur_row += 1
         else:
             self.mertits_by_system_frame.grid_remove()
@@ -587,7 +587,7 @@ class PowerPlayProgress:
                     for commod in self.current_session.commodities_delivered_systems:
                         count = self.current_session.total_commodities_delivered_by_system(commod)
                         if count > 0:
-                            hypl = HyperlinkLabel(self.pp_commods_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name='system', text=f"  - {commod}")
+                            hypl = MultiHyperlinkLabel(self.pp_commods_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name='system', text=f"  - {commod}")
                             hypl.grid(row=cur_row, column=0, sticky="w")
                             total_str = locale.format_string("%d", round(count, 0), grouping=True)
                             lbl = tk.Label(self.pp_commods_frame, text=f"{total_str} t")

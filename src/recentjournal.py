@@ -74,8 +74,8 @@ class RecentJournal:
     def add_entry(self, entry: dict) -> None:
 
         if entry.get("event", "").lower() == "supercruiseentry": self.__on_foot = False #In case the cmdr dies while on foot
-        if entry["event"] == "Disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
-        if entry["event"] == "Embark": self.__on_foot = False
+        if entry.get("event", "").lower() == "disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
+        if entry.get("event", "").lower() == "embark": self.__on_foot = False
 
         if entry['event'].lower() not in self.noise:
             #logger.debug(f"journal entries type: {type(self.__journal_entries_log)}")
