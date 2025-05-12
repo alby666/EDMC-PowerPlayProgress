@@ -65,7 +65,7 @@ class RecentJournal:
 
     donation_missions = r"^Mission_Altruism.*$"
 
-    HISTORY_DEPTH: int = 10
+    HISTORY_DEPTH: int = 20 #increased to 20 from 10 for the multiple cartography merits
 
     def __init__(self) -> None:
         self.__journal_entries_log: list = []
