@@ -413,6 +413,9 @@ class PowerPlayProgress:
         self.flex_row = current_row
 
         self.pp_commods_frame = tk.Frame(self.frame)
+        self.pp_commods_frame.grid_columnconfigure(0, weight=0)
+        self.pp_commods_frame.grid_columnconfigure(1, weight=2)
+        self.pp_commods_frame.grid_columnconfigure(2, weight=1)
         self.pp_commods_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
         self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text="PowerPlay Commodities (collected/delivered): 34/56")
         current_row += 1
@@ -461,8 +464,8 @@ class PowerPlayProgress:
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
             links = Socials.get_links(self.current_session.power_play)
-            self.socials_link_reddit.configure(url=links['reddit'])
-            self.socials_link_discord.configure(url=links['discord'])
+            self.socials_link_reddit.configure(url=links.get('reddit'))
+            self.socials_link_discord.configure(url=links.get('discord'))
             self.socials_power_label.config(text=self.current_session.power_play)
             self.socials_frame.grid()
             self.socials_link_reddit.grid(column=0)
@@ -540,7 +543,7 @@ class PowerPlayProgress:
                         self.mertits_by_system_frame.grid()
                         lbl = None
                         total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
-                        logger.debug(f"System: {sys.system} - {self.system_url(sys.system)}")
+                        #logger.debug(f"System: {sys.system} - {self.system_url(sys.system)}")
                         hypl = MultiHyperlinkLabel(self.mertits_by_system_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', sys.system)}", text=f"  - {sys.system}")
                         hypl.grid(row=cur_row, column=0, sticky="w")
                         theme.register(hypl)
@@ -560,11 +563,11 @@ class PowerPlayProgress:
 
         if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
             self.pp_commods_frame.grid()
-            self.powerplay_commodities_label.grid(row=cur_row, sticky="w")
+            self.powerplay_commodities_label.grid(row=cur_row, column=0, columnspan=3, sticky="w")
             self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected} t / {self.current_session.total_commodities_delivered} t")
             cur_row += 1
 
-            if  self.current_session.total_commodities_delivered > 0:
+            if self.current_session.total_commodities_delivered > 0:
                 if self.options_view_powerplay_commodities_by_type.get():
                     lbl = tk.Label(self.pp_commods_frame, text=f"Delivered By type:")
                     lbl.grid(row=cur_row, column=0, sticky="w")
@@ -574,7 +577,7 @@ class PowerPlayProgress:
                         count = self.current_session.total_commodities_delivered_by_type(commod)
                         if count > 0:
                             lbl = tk.Label(self.pp_commods_frame, text=f"  - {commod}:\t{round(count, 0)} t")
-                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            lbl.grid(row=cur_row, column=0, columnspan=3, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
                             cur_row += 1
@@ -587,11 +590,11 @@ class PowerPlayProgress:
                     for commod in self.current_session.commodities_delivered_systems:
                         count = self.current_session.total_commodities_delivered_by_system(commod)
                         if count > 0:
-                            hypl = MultiHyperlinkLabel(self.pp_commods_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name='system', text=f"  - {commod}")
+                            hypl = MultiHyperlinkLabel(self.pp_commods_frame, compound=tk.RIGHT, url=self.system_url(commod), popup_copy=True, name='system', text=f"  - {commod}")
                             hypl.grid(row=cur_row, column=0, sticky="w")
                             total_str = locale.format_string("%d", round(count, 0), grouping=True)
                             lbl = tk.Label(self.pp_commods_frame, text=f"{total_str} t")
-                            lbl.grid(row=cur_row, column=1, sticky="w")
+                            lbl.grid(row=cur_row, column=1, columnspan=2, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             self.power_play_hpl_labels.append(hypl)
                             theme.register(lbl)

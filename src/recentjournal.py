@@ -255,6 +255,11 @@ class RecentJournal:
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
+        
+    @property
+    def entries(self) -> list:
+        #logger.debug(f"entries: {self.__journal_entries_log}")
+        return self.__journal_entries_log
     
     def get_mined_commodity(self) -> str:
         #logger.debug(f"get_mind_commodity recent journal entries: {self.__journal_entries_log}")
@@ -303,9 +308,9 @@ class RecentJournal:
                     counting = True  # Start counting once a 'powerplaymerits' event is found
                     total_merits += log_entry.get("MeritsGained", 0)
                 elif event == target_event.lower():
-                    if counting:
-                        target_event_found = True
-                        continue  # Allow 'target_event' while counting
+                    #if counting:
+                    target_event_found = True
+                    continue  # Allow 'target_event' while counting
                 elif counting and not target_event_found:
                         total_merits = 0
                         break  # Stop counting if a non-'powerplaymerits' and non-'target_event' event is found

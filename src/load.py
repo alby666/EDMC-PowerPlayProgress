@@ -90,10 +90,14 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
     new_event = False
     ppp.recent_journal_log.add_entry(entry)
 
-    if wait_for_multi_sell_carto_data > 0: wait_for_multi_sell_carto_data -= 1
+    if wait_for_multi_sell_carto_data > 0: 
+        logger.debug(f"Waiting for multi sell carto data: {wait_for_multi_sell_carto_data}")
+        wait_for_multi_sell_carto_data -= 1
     if wait_for_multi_sell_carto_data == 0:
         #Now process the multi sell carto data, we have waited for 5 journal entries to be more sure we have all the data
+        logger.debug("Processing multi sell carto data")
         multi_carto_merits = ppp.recent_journal_log.get_multiple_cartography()
+        logger.debug(f"Multi carto merits: {ppp.recent_journal_log.get_multiple_cartography()}")
         if multi_carto_merits > 0:
             ppp.current_session.activities.add_cartography_merits(multi_carto_merits)
             ppp.current_session.activities.add_unknown_merits(-multi_carto_merits)
@@ -210,12 +214,19 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            #this might be something to deal with later:
-            #{"timestamp":"2025-05-04T09:48:23Z","event":"DeliverPowerMicroResources","TotalCount":1,"MicroResources":[{"Name":"powerpropagandadata","Name_Localised":"Power Political Data","Category":"ata","Count":1}],"MarketID":3930408705}
             #The mnarketid in the above refers to the stronghold carrier and not teh originating system/settelement
             #{"timestamp":"2025-05-04T09:48:23Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"powerpropagandadata","Type_Localised":"Power Political Data","Count":1}
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
+
+
+        case 'deliverpowermicroresources':
+            #{"timestamp":"2025-05-04T09:48:23Z","event":"DeliverPowerMicroResources","TotalCount":1,
+            # "MicroResources":[{"Name":"powerpropagandadata","Name_Localised":"Power Political Data","Category":"Data","Count":1}],"MarketID":3930408705}
+            new_event = True
+            for resource in entry.get("MicroResources", []):
+                if str(resource["Name"]).startswith("power"):
+                    ppp.current_session.add_commodity(SessionProgress.Commodities(resource["Name"], resource["Name_Localised"], system, 0, resource["Count"]))
 
         case 'powerplaymerits':
             logger.debug("PowerplayMerits event")
@@ -228,20 +239,29 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.starting_merits = int(entry["TotalMerits"]) - int(entry["MeritsGained"])
                 ppp.total_merits = int(entry["TotalMerits"])  
 
-                if system != '':
-                    ppp.current_system = SystemProgress()
-                    ppp.current_system.system = system
-                    ppp.current_system.earnings = 0
-                    ppp.systems.append(ppp.current_system)
+                #if system != '':
+                #    ppp.current_system = SystemProgress()
+                #    ppp.current_system.system = system
+                #    ppp.current_system.earnings = 0
+                #    ppp.systems.append(ppp.current_system)
 
             #Record the merits gained
+            found = False
             ppp.current_session.earned_merits += entry["MeritsGained"]
             ppp.total_merits = int(entry["TotalMerits"])
             #Apportion the merits to the appropriate system
             for sys in ppp.systems:
                 if sys.system == system:
+                    found = True
                     sys.earnings += entry["MeritsGained"]
                     break
+            #Add the system to thje list of merit systems if it is not already there
+            if not found:
+                ppp.current_system = SystemProgress()
+                ppp.current_system.system = system
+                ppp.current_system.earnings = entry["MeritsGained"]
+                ppp.systems.append(ppp.current_system)
+
 
             #Assign merits to appropriate activity...
             if ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
