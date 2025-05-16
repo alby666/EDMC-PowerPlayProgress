@@ -2,3 +2,11 @@ __pycache__/ttkHyperlinkLabel.cpython-312.pyc
 src/__pycache__/canvasprogressbar.cpython-312.pyc
 src/__pycache__/myProgressBar.cpython-312.pyc
 src/__pycache__/
+tests/__pycache__/__init__.cpython-312.pyc
+tests/__pycache__/EDMCLogging.cpython-312.pyc
+tests/__pycache__/test_recentjournal.cpython-312.pyc
+__pycache__/test.cpython-312.pyc
+tests/__pycache__/test_constants.cpython-312.pyc
+tests/__pycache__/test_load.cpython-312.pyc
+tests/__pycache__/test_socials.cpython-312.pyc
+tests/__pycache__/testdataset.cpython-312.pyc
