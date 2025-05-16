@@ -398,8 +398,8 @@ class PowerPlayProgress:
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
             links = Socials.get_links(self.current_session.power_play)
-            self.socials_link_reddit.configure(url=links['reddit'])
-            self.socials_link_discord.configure(url=links['discord'])
+            self.socials_link_reddit.configure(url=links.get('reddit', ''))
+            self.socials_link_discord.configure(url=links.get('discord', ''))
             self.socials_power_label.config(text=self.current_session.power_play)
             self.socials_frame.grid()
             self.socials_link_reddit.grid(column=0)
