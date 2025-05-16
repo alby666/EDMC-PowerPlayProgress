@@ -6,40 +6,43 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 <img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
-* Visual progress between ranks
+* IMPROVED: Visual progress between ranks, cleared progress bar and customisible colours
 * NEW: Links to Reddit and Discord sites for your Power
 * Total merits between dock/death events 
-* Merits gained per system
-* Tracks power play commodities collections & deliveries by the ton
-  * Count per power play commodity type
-  * Count by delivered system
-* Merits by Activity (work in progress)
+* IMPROVED: Merits gained per system - clickable systems with links to Inara, EDSM & Spansh
+* Tracks power play commodities collections & deliveries by the ton 
+  * Count per Power commodity type
+  * NEW: Count per Power data
+  * Count delivered by system
+* Merits by Activity
 
     <img src="screen_shot_by_activities.png">
 
   * Ship scans
   * Bounties
-  * Power play deliveries
+  * Power play commodities deliveries
   * Donation and aid missions
-  * NEW: Scan Data Links
-  * NEW: Holoscreen Hacks
-  * NEW: Rare Goods
-  * NEW: Salvage
-  * NEW: Cartograhy
-  * NEW: High Value Commodities
-  * NEW: Low Value Commodities
-  * NEW: Exobiology
-  * NEW: Mined Commodities
-  * NEW: on Foot activities
+  * Scan Data Links
+  * Holoscreen Hacks
+  * Rare Goods
+  * Salvage
+  * IMPROVED: Cartograhy - large multi-sell activities now tracked
+  * High Value Commodities
+  * Low Value Commodities
+  * Exobiology
+  * Mined Commodities
+  * On Foot activities
   * Unknowns (the journals have limited infomation so some will slip through the net when assigning them!)
 
   Will continue to improve the tracking and correct assignment to the correct systems but the current journal info is a limiting factor... :(
 
-* NEW: Preferences to show/hide all recorded info
+* Preferences to show/hide all recorded info
+  * NEW: Customisble progress bar colour, green, orange or match the EDMC theme
 
   <img src="screen_shot_preferences.png" width="500" height="300">
 
 ### Merits by systems
+  <img src="screen_shot_by_systems.png">
 
   <img src="merits_menu_help.png">
 

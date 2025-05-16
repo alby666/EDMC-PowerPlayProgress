@@ -12,7 +12,8 @@
                 "${env:USERPROFILE}\\AppData\\Local\\EDMarketConnector\\plugins\\EDMC-PowerPlayProgress",
                 "/E",
                 "/I",
-                "/Y"
+                "/Y",
+                "/EXCLUDE:${workspaceFolder}\\.vscode\\exclude.txt"
             ],
             "problemMatcher": [],
             "group": {

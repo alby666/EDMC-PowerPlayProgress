@@ -7,24 +7,17 @@ It displays the progress in a progress bar and a label, and allows the user to c
 from __future__ import annotations
 
 from datetime import datetime
-import math
 import locale
-import requests
-import semantic_version  # type: ignore # noqa: N813
-import re
 import tkinter as tk
-from tkinter import ttk
-from consts import PLUGIN_NAME, plugin_version, mined_heading
-from recentjournal import RecentJournal
+from consts import PLUGIN_NAME
 from sessionprogress import SessionProgress
-from socials import Socials
 from systemprogress import SystemProgress
-from ttkHyperlinkLabel import HyperlinkLabel # type: ignore # noqa: N813
 
 import myNotebook as nb  # type: ignore # noqa: N813
-from config import appname, config # type: ignore # noqa: N813
+from config import appname # type: ignore # noqa: N813
 from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
-from theme import theme # type: ignore # noqa: N813
+
+from powerplayprogress import PowerPlayProgress
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 
@@ -559,22 +552,6 @@ def plugin_start3(plugin_dir: str) -> str:
     """
     return ppp.on_load()
 
-def version_check() -> str:
-    try:
-        req = requests.get(url='https://api.github.com/repos/alby666/EDMC-PowerPlayProgress/releases/latest')
-        data = req.json()
-        if req.status_code != requests.codes.ok:
-            raise requests.RequestException
-    except (requests.RequestException, requests.JSONDecodeError) as ex:
-        logger.error('Failed to parse GitHub release info', exc_info=ex)
-        return ''
-
-    plugin_ver = semantic_version.Version(plugin_version)
-    version = semantic_version.Version(data['tag_name'][1:])
-    if version > plugin_ver:
-        return str(version)
-    return ''
-
 def plugin_stop() -> None:
     """
     Handle shutdown of the plugin.
@@ -627,10 +604,24 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
     #        f', system = "{system}", station = "{station}"'
     #        f', event = "{entry["event"]}"'
     #)
-
+    global wait_for_multi_sell_carto_data
     locale.setlocale(locale.LC_ALL, '')
     new_event = False
     ppp.recent_journal_log.add_entry(entry)
+
+    if wait_for_multi_sell_carto_data > 0: 
+        logger.debug(f"Waiting for multi sell carto data: {wait_for_multi_sell_carto_data}")
+        wait_for_multi_sell_carto_data -= 1
+    if wait_for_multi_sell_carto_data == 0:
+        #Now process the multi sell carto data, we have waited for 5 journal entries to be more sure we have all the data
+        logger.debug("Processing multi sell carto data")
+        multi_carto_merits = ppp.recent_journal_log.get_multiple_cartography()
+        logger.debug(f"Multi carto merits: {ppp.recent_journal_log.get_multiple_cartography()}")
+        if multi_carto_merits > 0:
+            ppp.current_session.activities.add_cartography_merits(multi_carto_merits)
+            ppp.current_session.activities.add_unknown_merits(-multi_carto_merits)
+        wait_for_multi_sell_carto_data= -1
+
     event_type = entry['event'].lower()
     match event_type:
 
@@ -742,12 +733,19 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
 
         case 'powerplaydeliver':
             #{"timestamp":"2025-04-05T11:34:05Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"republicanfieldsupplies","Type_Localised":"Archer's Field Supplies","Count":52}
-            #this might be something to deal with later:
-            #{"timestamp":"2025-05-04T09:48:23Z","event":"DeliverPowerMicroResources","TotalCount":1,"MicroResources":[{"Name":"powerpropagandadata","Name_Localised":"Power Political Data","Category":"ata","Count":1}],"MarketID":3930408705}
             #The mnarketid in the above refers to the stronghold carrier and not teh originating system/settelement
             #{"timestamp":"2025-05-04T09:48:23Z","event":"PowerplayDeliver","Power":"Jerome Archer","Type":"powerpropagandadata","Type_Localised":"Power Political Data","Count":1}
             new_event = True
             ppp.current_session.add_commodity(SessionProgress.Commodities(entry["Type"], entry["Type_Localised"], system, 0, entry["Count"]))
+
+
+        case 'deliverpowermicroresources':
+            #{"timestamp":"2025-05-04T09:48:23Z","event":"DeliverPowerMicroResources","TotalCount":1,
+            # "MicroResources":[{"Name":"powerpropagandadata","Name_Localised":"Power Political Data","Category":"Data","Count":1}],"MarketID":3930408705}
+            new_event = True
+            for resource in entry.get("MicroResources", []):
+                if str(resource["Name"]).startswith("power"):
+                    ppp.current_session.add_commodity(SessionProgress.Commodities(resource["Name"], resource["Name_Localised"], system, 0, resource["Count"]))
 
         case 'powerplaymerits':
             logger.debug("PowerplayMerits event")
@@ -760,20 +758,29 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.starting_merits = int(entry["TotalMerits"]) - int(entry["MeritsGained"])
                 ppp.total_merits = int(entry["TotalMerits"])  
 
-                if system != '':
-                    ppp.current_system = SystemProgress()
-                    ppp.current_system.system = system
-                    ppp.current_system.earnings = 0
-                    ppp.systems.append(ppp.current_system)
+                #if system != '':
+                #    ppp.current_system = SystemProgress()
+                #    ppp.current_system.system = system
+                #    ppp.current_system.earnings = 0
+                #    ppp.systems.append(ppp.current_system)
 
             #Record the merits gained
+            found = False
             ppp.current_session.earned_merits += entry["MeritsGained"]
             ppp.total_merits = int(entry["TotalMerits"])
             #Apportion the merits to the appropriate system
             for sys in ppp.systems:
                 if sys.system == system:
+                    found = True
                     sys.earnings += entry["MeritsGained"]
                     break
+            #Add the system to thje list of merit systems if it is not already there
+            if not found:
+                ppp.current_system = SystemProgress()
+                ppp.current_system.system = system
+                ppp.current_system.earnings = entry["MeritsGained"]
+                ppp.systems.append(ppp.current_system)
+
 
             #Assign merits to appropriate activity...
             if ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
@@ -787,14 +794,14 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isSalvage: ppp.current_session.activities.add_salvage_merits(entry["MeritsGained"])
-            elif ppp.recent_journal_log.isCartography: ppp.current_session.activities.add_cartography_merits(entry["MeritsGained"])
+            #MultiSellExplorationData handled separately
+            elif ppp.recent_journal_log.isSingleCartography: ppp.current_session.activities.add_cartography_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isHighValueCommditySale: ppp.current_session.activities.add_high_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isLowValueCommditySale: ppp.current_session.activities.add_low_value_commodities_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"], ppp.recent_journal_log.get_mined_commodity(), ppp.recent_journal_log.get_mined_tonnage())
             elif ppp.recent_journal_log.isOnFoot: ppp.current_session.activities.add_on_foot_merits(entry["MeritsGained"])
             else: 
-                ppp.recent_journal_log.writelog()
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
 
             ppp.last_merits_gained = entry["MeritsGained"]
@@ -835,5 +842,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
                 #do not process any other options for previous merits gained
                 ppp.last_merits_gained = 0
-            
+        
+        case 'multisellexplorationdata':
+            #wait for 5 further journal entries before processing, 5 is a guess, even with a full page this should cover it most times
+            wait_for_multi_sell_carto_data = 5
+
     if ppp.total_merits > 0 and new_event: ppp.Update_Ppp_Display()

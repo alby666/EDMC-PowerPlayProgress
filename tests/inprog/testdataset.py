@@ -1,10 +1,10 @@
-from sessionprogress import SessionProgress
-from systemprogress import SystemProgress
+from src.sessionprogress import SessionProgress
+from src.systemprogress import SystemProgress
 
 def create_sample_session_progress() -> SessionProgress:
-    """
-    Creates and returns a populated instance of the SessionProgress class with sample data.
-    """
+    
+    #Creates and returns a populated instance of the SessionProgress class with sample data.
+    
     session = SessionProgress(
         earned_merits=100,
         time=3600,
@@ -39,9 +39,9 @@ def create_sample_session_progress() -> SessionProgress:
     return session
 
 def create_sample_system_progress_list() -> list[SystemProgress]:
-    """
-    Creates and returns a list of populated SystemProgress objects with sample data.
-    """
+    
+    #Creates and returns a list of populated SystemProgress objects with sample data.
+    
     systems = []
 
     # Example 1
