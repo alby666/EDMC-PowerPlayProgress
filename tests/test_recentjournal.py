@@ -155,5 +155,13 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-09T21:06:51Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":46,"TotalMerits":1168157})
         self.assertEqual(self.recent_journal.get_mined_tonnage(), 50)
 
+    def test_is_wake_scan(self):
+        """
+        Test the isWakeScan property.
+        """
+        self.recent_journal.add_entry({"timestamp":"2025-05-17T10:46:44Z","event":"MaterialCollected","Category":"Encoded","Name":"wakesolutions","Name_Localised":"Strange Wake Solutions","Count":3})
+        self.recent_journal.add_entry({"timestamp":"2025-05-17T10:46:45Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":13,"TotalMerits":1181461})
+        self.assertTrue(self.recent_journal.isWakeScan)
+
 if __name__ == "__main__":
     unittest.main()
