@@ -315,7 +315,8 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 #Move the merits from the unknown activity to the donation mission activity
                 logger.debug(f"Donation mission merits second: {entry}")
                 ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
-                ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
+                if ppp.current_session.activities.get_unknown_merits() >= ppp.last_merits_gained:
+                    ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
                 #do not process any other options for previous merits gained
                 ppp.last_merits_gained = 0
         
