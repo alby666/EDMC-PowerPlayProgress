@@ -829,12 +829,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
-           
             new_event = True
-            #logger.debug(f"Mission completed event: {entry}")
-            #logger.debug(f"Mission completed event name: {entry.get('Name', '')}")
-            #logger.debug(f"Mission completed event is donation: {ppp.recent_journal_log.isDonationMission}")
-
             if ppp.current_session.activities.get_unknown_merits() > 0 and ppp.recent_journal_log.isDonationMissionMeritsSecond:
                 #Move the merits from the unknown activity to the donation mission activity
                 logger.debug(f"Donation mission merits second: {entry}")
