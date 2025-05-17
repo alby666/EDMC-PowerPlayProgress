@@ -41,7 +41,6 @@ class PowerPlayProgress:
     
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
-
         #Preferences declarations
         self.options_view_totals = tk.BooleanVar(value=bool(config.get_bool('options_view_totals', default=True)))
         self.options_view_merits_by_systems = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_systems', default=True)))
@@ -443,8 +442,6 @@ class PowerPlayProgress:
         """
         Update the display with the current session and system data.
         """
-        #logger.debug(f"Update_Ppp_Display event - progress - {round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)}")
-
         # Get the system's default locale
         default_locale = locale.getlocale()
         # Set the locale to the system's default
@@ -543,7 +540,6 @@ class PowerPlayProgress:
                         self.mertits_by_system_frame.grid()
                         lbl = None
                         total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
-                        #logger.debug(f"System: {sys.system} - {self.system_url(sys.system)}")
                         hypl = MultiHyperlinkLabel(self.mertits_by_system_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', sys.system)}", text=f"  - {sys.system}")
                         hypl.grid(row=cur_row, column=0, sticky="w")
                         theme.register(hypl)
@@ -624,7 +620,6 @@ class PowerPlayProgress:
                             theme.register(lbl)
                             cur_row += 1
             
-        #self.copy_button.grid(row=cur_row)
         if self.options_view_export_format.get() == 'Text':
             self.copy_button.config(command=self.copy_to_clipboard_text)
         else:
