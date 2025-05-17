@@ -10,6 +10,7 @@ import math
 import locale
 import re
 import requests
+import platform
 import semantic_version  # type: ignore # noqa: N813
 import tkinter as tk
 from tkinter import ttk
@@ -80,6 +81,7 @@ class PowerPlayProgress:
         self.progressbar_frame: tk.Frame = tk.Frame()
         self.totals_frame: tk.Frame = tk.Frame()
         self.pp_commods_frame: tk.Frame = tk.Frame()
+        self.merits_by_activty_frame: tk.Frame = tk.Frame()
         self.socials_power_label: tk.Label = tk.Label()
         self.flex_row = 7
         self.last_merits_gained = 0
@@ -275,43 +277,81 @@ class PowerPlayProgress:
             return 15000
         else:
             return 15000 + (8000 * (currentRank - 5))
-            
+
+    import tkinter as tk
+
+    def frame_text_grid(self, frame: tk.Frame, discord: bool = False) -> str:
+        """
+        Returns a string representing the text property of each widget in the frame,
+        arranged by their grid row and column.
+        If discord=True, output is formatted with Discord-friendly markdown.
+        """
+        if platform.system() == "Windows":
+            # Windows: use \r\n line endings
+            line_ending = "\r\n"
+        else:
+            # Non-Windows: use \n line endings
+            line_ending = "\n"
+
+        grid_map = {}
+        for widget in frame.winfo_children():
+            info = widget.grid_info()
+            if "row" in info and "column" in info:
+                row = int(info["row"])
+                col = int(info["column"])
+                text = ""
+                if hasattr(widget, "cget"):
+                    try:
+                        text = widget.cget("text")
+                    except tk.TclError:
+                        text = ""
+                grid_map.setdefault(row, {})[col] = text
+
+        result_lines = []
+        for row in sorted(grid_map.keys()):
+            cols = grid_map[row]
+            if discord:
+                # Discord: bold for first column, bullet for indented, tab for others
+                line_parts = []
+                for col in sorted(cols.keys()):
+                    cell = cols[col]
+                    if col == 0 and cell.strip().startswith("-"):
+                        line_parts.append(f"{cell.strip()}")
+                    elif col == 0:
+                        line_parts.append(f"### {cell}")
+                    else:
+                        line_parts.append(cell)
+                line = "\t".join(line_parts)
+                if not line.startswith("-"): line += " ###"
+            else:
+                line = "\t".join(str(cols.get(col, "")) for col in sorted(cols.keys()))
+            result_lines.append(line)
+        return line_ending.join(result_lines) + line_ending
+
     def copy_to_clipboard_text(self):
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
-        self.frame.clipboard_append(self.total_merits_label.cget("text"))
-        self.frame.clipboard_append("\n")
-        self.frame.clipboard_append(self.total_session_merits.cget("text"))
-        self.frame.clipboard_append("\n")
-        self.frame.clipboard_append(self.total_since_merits.cget("text"))
-        self.frame.clipboard_append("\n")
-        self.frame.clipboard_append(self.total_prev_merits.cget("text"))
-        self.frame.clipboard_append("\n")
-        #self.frame.clipboard_append(self.merits_by_systems_label.cget("text"))
-        #self.frame.clipboard_append("\n")
-
-        for lbl in self.power_play_list_labels:
-            self.frame.clipboard_append(lbl.cget("text"))
-            self.frame.clipboard_append("\n")
+        if self.options_view_totals.get(): 
+            self.frame.clipboard_append(self.frame_text_grid(self.totals_frame, discord=False))
+        if self.options_view_merits_by_systems.get() and len(self.systems) > 0: 
+            self.frame.clipboard_append(self.frame_text_grid(self.mertits_by_system_frame, discord=False))
+        if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0): 
+            self.frame.clipboard_append(self.frame_text_grid(self.pp_commods_frame, discord=False))
+        if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0: 
+            self.frame.clipboard_append(self.frame_text_grid(self.merits_by_activty_frame, discord=False))
         self.frame.update()  # Ensure clipboard updates
 
     def copy_to_clipboard_discord(self):
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
-        
-        # Add Markdown headers and formatting for Discord
-        self.frame.clipboard_append("**" + self.total_merits_label.cget("text") + "**\n")
-        self.frame.clipboard_append("**" + self.total_session_merits.cget("text") + "**\n")
-        self.frame.clipboard_append("**" + self.total_since_merits.cget("text") + "**\n")
-        self.frame.clipboard_append("**" + self.total_prev_merits.cget("text") + "**\n")
-        
-        # Format labels in the power_play_list_labels list
-        for lbl in self.power_play_list_labels:
-            if lbl.cget("text")[0] != "\t":
-                self.frame.clipboard_append(f"**" + lbl.cget("text") + "**\n")
-            else:
-                self.frame.clipboard_append("- " + lbl.cget("text") + "\n")  # Use bullet points
-        
+        if self.options_view_totals.get(): 
+            self.frame.clipboard_append(self.frame_text_grid(self.totals_frame, discord=True))
+        if self.options_view_merits_by_systems.get() and len(self.systems) > 0: 
+            self.frame.clipboard_append(self.frame_text_grid(self.mertits_by_system_frame, discord=True))
+        if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0): 
+            self.frame.clipboard_append(self.frame_text_grid(self.pp_commods_frame, discord=True))
+        if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0: 
+            self.frame.clipboard_append(self.frame_text_grid(self.merits_by_activty_frame, discord=True))
         self.frame.update()  # Ensure clipboard updates
 
     def version_check(self) -> str:
@@ -419,6 +459,13 @@ class PowerPlayProgress:
         self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text="PowerPlay Commodities (collected/delivered): 34/56")
         current_row += 1
 
+        self.merits_by_activty_frame = tk.Frame(self.frame)
+        self.merits_by_activty_frame.grid_columnconfigure(0, weight=0)
+        self.merits_by_activty_frame.grid_columnconfigure(1, weight=2)
+        self.merits_by_activty_frame.grid_columnconfigure(2, weight=1)
+        self.merits_by_activty_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        current_row += 1
+
         self.copy_button = tk.Button(
             self.frame,
             text="Copy Progress",
@@ -431,6 +478,7 @@ class PowerPlayProgress:
         self.mertits_by_system_frame.grid_remove()
         self.totals_frame.grid_remove()
         self.pp_commods_frame.grid_remove()
+        self.merits_by_activty_frame.grid_remove()
         self.pb.canvas.grid_remove()
         self.socials_link_reddit.grid_remove()
         self.socials_link_discord.grid_remove()
@@ -601,20 +649,26 @@ class PowerPlayProgress:
             self.powerplay_commodities_label.grid_remove()
 
         if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
-            lbl = tk.Label(self.frame, text=f"Merits by Activity:")
+            self.merits_by_activty_frame.grid()
+            lbl = tk.Label(self.merits_by_activty_frame, text=f"Merits by Activity:")
             lbl.grid(row=cur_row, column=0, sticky="w")
             self.power_play_list_labels.append(lbl)
+            theme.register(lbl)
             cur_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
-                    lbl = tk.Label(self.frame, text=f"  - {act.activity_type}\t{act.merits}")
+                    lbl = tk.Label(self.merits_by_activty_frame, text=f"  - {act.activity_type}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
+                    lblMerits = tk.Label(self.merits_by_activty_frame, text=f"{act.merits}")
+                    lblMerits.grid(row=cur_row, column=1, columnspan=2, sticky="w")
+                    self.power_play_list_labels.append(lblMerits)
                     theme.register(lbl)
+                    theme.register(lblMerits)
                     cur_row += 1
                     if act.activity_type == mined_heading:
                         for commod in self.current_session.activities.mined_commodities:
-                            lbl = tk.Label(self.frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
+                            lbl = tk.Label(self.merits_by_activty_frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
                             lbl.grid(row=cur_row, column=0, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
@@ -629,3 +683,4 @@ class PowerPlayProgress:
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)
         theme.update(self.pp_commods_frame)
+        theme.update(self.merits_by_activty_frame)
