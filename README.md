@@ -1,5 +1,7 @@
 # EDMC-PowerPlayProgress
 
+## TBA: there is a bug in Elite Dangerous with Donation Missions, currently the merits are being doubled in the logs https://issues.frontierstore.net/issue-detail/75777
+
 ## Summary
 
 EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to track their power play progress:
