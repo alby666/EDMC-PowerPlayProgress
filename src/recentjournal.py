@@ -63,6 +63,8 @@ class RecentJournal:
 
     salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
 
+    wake_scan_materials_names = {"disruptedwakeechoes", "wakesolutions", "fsdtelemetry", "hyperspacetrajectories", "dataminedwake"}
+
     donation_missions = r"^Mission_Altruism.*$"
 
     HISTORY_DEPTH: int = 20 #increased to 20 from 10 for the multiple cartography merits
@@ -92,6 +94,10 @@ class RecentJournal:
 
     @property
     def isScan(self) -> bool:
+        return self.isShipScan or self.isWakeScan
+    
+    @property
+    def isShipScan(self) -> bool:
         #logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
         if len(self.__journal_entries_log) < 3:
             return False
@@ -104,6 +110,18 @@ class RecentJournal:
                 or self.__journal_entries_log[2].get("event", "").lower() == "shiptargeted")
                 and (int(self.__journal_entries_log[0].get("MeritsGained", 0)) <= 40))
     
+    @property
+    def isWakeScan(self) -> bool:
+        #logger.debug(f"isWakeScan recent journal entries: {self.__journal_entries_log}")
+        #{"timestamp":"2025-05-17T10:06:26Z","event":"MaterialCollected","Category":"Encoded","Name":"disruptedwakeechoes","Name_Localised":"Atypical Disrupted Wake Echoes","Count":3}
+        try:
+            return (len(self.__journal_entries_log) > 2 and 
+                    ((self.__journal_entries_log[1].get("event", "") == "MaterialCollected" and self.__journal_entries_log[1].get("Name", "") in self.wake_scan_materials_names)
+                        or (self.__journal_entries_log[2].get("event", "") == "MaterialCollected" and self.__journal_entries_log[2].get("Name", "") in self.wake_scan_materials_names)
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
+        except IndexError as e:
+            return False
+        
     @property
     def isBounty(self) -> bool:
         #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
@@ -255,7 +273,7 @@ class RecentJournal:
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
-        
+
     @property
     def entries(self) -> list:
         #logger.debug(f"entries: {self.__journal_entries_log}")
@@ -320,11 +338,3 @@ class RecentJournal:
             return total_merits
         else:
             return 0
-
-    """
-    @property
-    def isUnknown(self) -> bool:
-        logger.debug(f"Unknown: {self.__journal_entries_log}")
-        #will eventually need a number of NOT ANDs here
-        return (not self.isScan and not self.isBounty and not self.isPowerPlayDelivery)
-    """
