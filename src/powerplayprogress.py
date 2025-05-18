@@ -13,6 +13,7 @@ import requests
 import platform
 import semantic_version  # type: ignore # noqa: N813
 import tkinter as tk
+from tkinter import messagebox
 from tkinter import ttk
 from consts import PLUGIN_NAME, mined_heading, plugin_version
 from recentjournal import RecentJournal
@@ -82,6 +83,7 @@ class PowerPlayProgress:
         self.totals_frame: tk.Frame = tk.Frame()
         self.pp_commods_frame: tk.Frame = tk.Frame()
         self.merits_by_activty_frame: tk.Frame = tk.Frame()
+        self.buttons_frame: tk.Frame = tk.Frame()
         self.socials_power_label: tk.Label = tk.Label()
         self.flex_row = 7
         self.last_merits_gained = 0
@@ -278,8 +280,6 @@ class PowerPlayProgress:
         else:
             return 15000 + (8000 * (currentRank - 5))
 
-    import tkinter as tk
-
     def frame_text_grid(self, frame: tk.Frame, discord: bool = False) -> str:
         """
         Returns a string representing the text property of each widget in the frame,
@@ -376,6 +376,26 @@ class PowerPlayProgress:
             config.get_str('system_provider', default='EDSM'), 'EDSM', 'system_url', system
         )
     
+    def reset_progress(self) -> None:
+        """
+        Reset the progress of the current session.
+        """
+        response = messagebox.askyesno(
+            title="Reset Progress",
+            message="Are you sure you want to reset the progress?",
+            icon=messagebox.WARNING,
+        )
+        if response:
+            self.current_session.earned_merits = 0
+            self.previous_session = SessionProgress()
+            for sys in self.systems:
+                sys.earnings = 0
+            self.current_session.commodities = []
+            self.current_session.commodities_delivered_systems = []
+            self.current_session.commodities_delivered_types = []
+            self.current_session.activities = SessionProgress.Activities()
+            self.Update_Ppp_Display()
+
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
         Create our entry on the main EDMC UI.
@@ -466,10 +486,20 @@ class PowerPlayProgress:
         self.merits_by_activty_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
         current_row += 1
 
+        self.buttons_frame = tk.Frame(self.frame)
+        self.buttons_frame.grid_columnconfigure(0, weight=0)
+        self.buttons_frame.grid_columnconfigure(1, weight=2)
+        self.buttons_frame.grid_columnconfigure(2, weight=1)
+        self.buttons_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
         self.copy_button = tk.Button(
-            self.frame,
+            self.buttons_frame,
             text="Copy Progress",
             command=self.copy_to_clipboard_text
+        )
+        self.reset_button = tk.Button(
+            self.buttons_frame,
+            text="Reset Progress",
+            command=self.reset_progress
         )
         current_row += 1
 
@@ -483,6 +513,7 @@ class PowerPlayProgress:
         self.socials_link_reddit.grid_remove()
         self.socials_link_discord.grid_remove()
         self.socials_power_label.grid_remove()
+        self.buttons_frame.grid_remove()
         
         return self.frame
 
@@ -559,7 +590,11 @@ class PowerPlayProgress:
         if self.options_view_merits_by_systems.get() and len(self.systems) > 0:
             if (self.total_merits - self.starting_merits) > 0:
                 self.mertits_by_system_frame.grid()
-                self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
+                if self.current_system.earnings > 0:
+                    self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
+                else:
+                    self.mertits_by_system_frame.grid_remove()
+                    self.merits_by_systems_label.grid_remove()
                 cur_row += 1
                 for sys in self.systems:
                     if sys.earnings > 0:
@@ -673,14 +708,21 @@ class PowerPlayProgress:
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
                             cur_row += 1
-            
+        else:
+            self.merits_by_activty_frame.grid_remove()
+
+        self.buttons_frame.grid(row=cur_row, column=0, columnspan=2, sticky="NSEW")
         if self.options_view_export_format.get() == 'Text':
             self.copy_button.config(command=self.copy_to_clipboard_text)
         else:
             self.copy_button.config(command=self.copy_to_clipboard_discord)
         cur_row += 1
-        self.copy_button.grid(row=cur_row, column=0, columnspan=2, sticky="W")
+        self.copy_button.grid(row=cur_row, column=0, sticky="W")
+        self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=5)
+
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)
         theme.update(self.pp_commods_frame)
         theme.update(self.merits_by_activty_frame)
+        theme.update(self.totals_frame)
+        theme.update(self.buttons_frame)

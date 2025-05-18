@@ -16,6 +16,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Count per Power commodity type
   * NEW: Count per Power data
   * Count delivered by system
+* NEW: Ability to reset the progress counters
 * Merits by Activity
 
     <img src="screen_shot_by_activities.png">
@@ -46,6 +47,12 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 ### Merits by systems
   <img src="screen_shot_by_systems.png">
 
+  * Right click on systems for options
+  
+    <img src="screen_shot_systems_menu_dark.png">
+
+  * Left click on systems to visit your preferred website (adjust via EDMC settings) 
+
   <img src="merits_menu_help.png">
 
 1. The system name
@@ -58,6 +65,16 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * C = State Control Progress trend
   * R = Reinforcement Score trend
   * U = Undermining Score trend
+
+### Functions
+
+<img src="screen_shot_buttons_dark.png"> <img src="screen_shot_buttons_light.png">
+
+* Copy Progress - copies the current displayed progress to the clipboard, configure it in preferences for markup/Discord friendly or text output
+
+  <img src="screen_shot_clipboard_prefs.png">
+
+* Reset Progress - resets the current progress counters (except for the overall session total)
 
 ## Requirements
 * [EDMC] version 5.12 and above (python 3.11)
