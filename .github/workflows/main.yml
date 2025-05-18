@@ -1,5 +1,9 @@
 name: Build and Compress Release
 
+permissions:
+  contents: write
+  issues: read
+
 on:
   workflow_dispatch: # Enables manual triggering of this workflow
     inputs:
