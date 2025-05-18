@@ -35,6 +35,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Exobiology
   * Mined Commodities
   * On Foot activities
+  * NEW: Commit Crimes
   * Unknowns (the journals have limited infomation so some will slip through the net when assigning them!)
 
   Will continue to improve the tracking and correct assignment to the correct systems but the current journal info is a limiting factor... :(

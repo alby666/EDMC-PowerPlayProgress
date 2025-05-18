@@ -282,6 +282,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isExobiology: ppp.current_session.activities.add_exobiology_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isMined: ppp.current_session.activities.add_mined_merits(entry["MeritsGained"], ppp.recent_journal_log.get_mined_commodity(), ppp.recent_journal_log.get_mined_tonnage())
             elif ppp.recent_journal_log.isOnFoot: ppp.current_session.activities.add_on_foot_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isCommitCrimes: ppp.current_session.activities.add_commit_crimes_merits(entry["MeritsGained"])
             else: 
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
 

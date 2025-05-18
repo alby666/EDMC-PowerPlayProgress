@@ -163,5 +163,13 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-17T10:46:45Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":13,"TotalMerits":1181461})
         self.assertTrue(self.recent_journal.isWakeScan)
 
+    def test_commit_crimes(self):
+        """
+        Test the commit_crimes method.
+        """
+        self.recent_journal.add_entry({"timestamp":"2025-05-18T10:02:47Z","event":"CommitCrime","CrimeType":"murder","Faction":"Inara Nexus","Victim":"Mike McClay","Bounty":5000})
+        self.recent_journal.add_entry({"timestamp":"2025-05-18T10:02:47Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":268,"TotalMerits":1205795})
+        self.assertTrue(self.recent_journal.isCommitCrimes)
+
 if __name__ == "__main__":
     unittest.main()
