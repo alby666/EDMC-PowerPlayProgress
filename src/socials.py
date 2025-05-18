@@ -4,7 +4,7 @@ class Socials:
     @staticmethod
     def get_links(power_name):
         powers = {
-            "A. Lavingny-Duval": {
+            "Arissa Lavigny-Duval": {
                 "discord": "https://discord.gg/h28SG5H",
                 "reddit": "http://www.reddit.com/r/EliteLavigny"
             },
@@ -54,7 +54,7 @@ class Socials:
                 "reddit": "http://www.reddit.com/r/EliteTorval"
             }
         }
-        return powers.get(power_name, "Power not found.")
+        return powers.get(power_name, "")
 
 # Example usage:
 # socials = Socials()
