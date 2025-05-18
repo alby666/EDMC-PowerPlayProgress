@@ -262,10 +262,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system.earnings = entry["MeritsGained"]
                 ppp.systems.append(ppp.current_system)
 
-
             #Assign merits to appropriate activity...
-            if ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
-            elif ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
+            #Bounties need to be before scan as they could be a scan related to the bounty
+            if ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
             #Donations missions are a bit tricky as they can be completed after the merits are awarded.
             elif ppp.recent_journal_log.isDonationMissionMeritsFirst and not ppp.recent_journal_log.isDonationMissionMeritsSecond: 
