@@ -40,7 +40,7 @@ class RecentJournal:
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
              "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted",
-             "storedships", "shipyard"}
+             "storedships", "shipyard", "crimevictim"}
 
     rare_goods = {
         "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
@@ -273,7 +273,19 @@ class RecentJournal:
                 and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
-
+        
+    @property
+    def isCommitCrimes(self) -> bool:
+        #logger.debug(f"isCommitCrimes recent journal entries: {self.__journal_entries_log}")
+        #{"timestamp":"2025-05-18T10:02:47Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":268,"TotalMerits":1205795}
+        #{"timestamp":"2025-05-18T10:02:47Z","event":"CommitCrime","CrimeType":"murder","Faction":"Inara Nexus","Victim":"Mike McClay","Bounty":5000}       
+        try: 
+            return (len(self.__journal_entries_log) > 2 
+                    and (self.__journal_entries_log[1].get("event", "") == "CommitCrime" or self.__journal_entries_log[2].get("event", "") == "CommitCrime")
+                    and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
+            return False
+        
     @property
     def entries(self) -> list:
         #logger.debug(f"entries: {self.__journal_entries_log}")
