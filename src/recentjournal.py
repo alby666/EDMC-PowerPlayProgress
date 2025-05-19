@@ -128,11 +128,20 @@ class RecentJournal:
         try:
             if len(self.__journal_entries_log) < 2:
                 return False
-            else:
-                return ((self.__journal_entries_log[1].get("event", "").lower() == "bounty" 
-                        or self.__journal_entries_log[2].get("event", "").lower() == "bounty")
-                        and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
-        except IndexError as e:
+            # First entry must be powerplaymerits
+            if self.__journal_entries_log[0].get("event", "").lower() != "powerplaymerits":
+                return False
+            # Scan through subsequent entries, skipping shiptargeted, looking for bounty
+            for entry in self.__journal_entries_log[1:]:
+                event = entry.get("event", "").lower()
+                if event == "shiptargeted":
+                    continue
+                if event == "bounty":
+                    return True
+                # If we hit any other event before bounty, stop searching
+                break
+            return False
+        except IndexError:
             return False
 
     @property
