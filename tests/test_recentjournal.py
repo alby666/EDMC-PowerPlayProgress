@@ -171,5 +171,15 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-18T10:02:47Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":268,"TotalMerits":1205795})
         self.assertTrue(self.recent_journal.isCommitCrimes)
 
+    def test_is_bounty2(self):
+        """
+        Test the isBounty property.
+        """
+        self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:28Z", "event":"Bounty", "Rewards":[ { "Faction":"Inara Nexus", "Reward":372898 } ], "PilotName":"$npc_name_decorate:#name=aigy;", "PilotName_Localised":"aigy", "Target":"krait_mkii", "Target_Localised":"Krait Mk II", "TotalReward":372898, "VictimFaction":"Terra Formations Industries"})
+        self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:28Z", "event":"ShipTargeted", "TargetLocked":False})
+        self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:28Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"krait_mkii", "Ship_Localised":"Krait Mk II", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Weltschmertz;", "PilotName_Localised":"Weltschmertz", "PilotRank":"Master", "ShieldHealth":64.881157, "HullHealth":100.000000, "Faction":"Terra Formations Industries", "LegalStatus":"Wanted", "Bounty":602879})
+        self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:35Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":91, "TotalMerits":1207320})
+        self.assertTrue(self.recent_journal.isBounty)
+        
 if __name__ == "__main__":
     unittest.main()
