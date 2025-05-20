@@ -44,6 +44,7 @@ class PowerPlayProgress:
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
         #Preferences declarations
+        self.options_view_progress_bar = tk.BooleanVar(value=bool(config.get_bool('options_view_progress_bar', default=True)))
         self.options_view_totals = tk.BooleanVar(value=bool(config.get_bool('options_view_totals', default=True)))
         self.options_view_merits_by_systems = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_systems', default=True)))
         self.options_view_merits_by_activities = tk.BooleanVar(value=bool(config.get_bool('options_view_merits_by_activities', default=True)))
@@ -141,17 +142,21 @@ class PowerPlayProgress:
         frame = nb.Frame(parent)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+        frame.columnconfigure(3, weight=1)
         frame.grid(sticky=tk.NSEW)
 
         row_count = 0
         
+        row_count += 1
+        nb.Checkbutton(frame, variable=self.options_view_progress_bar, text="Show/hide Progress Bar").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=1, padx=5, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
+        row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_socials, text="Show/hide Socials Links").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
-        row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
-        row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text="Show/hide Merits by Systems").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
@@ -159,7 +164,7 @@ class PowerPlayProgress:
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text="Detail mined commodities").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text="Show/hide Powerplay commodities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
@@ -167,7 +172,7 @@ class PowerPlayProgress:
         row_count += 1
         nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text="By system").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
-        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=2)
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
 
         export_options = ['Text', 'Discord']
@@ -176,14 +181,14 @@ class PowerPlayProgress:
                     '   Text - plain ascii text\n' +
                     '   Discord - markup format, better suited for pasting to Discord',
             justify=tk.LEFT) \
-        .grid(row=row_count, padx=5, column=0, sticky=tk.NW)
+        .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
         row_count+= 1
         nb.OptionMenu(
             frame,
             self.options_view_export_format,
             self.options_view_export_format.get(),
             *export_options
-        ).grid(row=row_count, padx=15, sticky=tk.W)
+        ).grid(row=row_count, padx=15, sticky=tk.W, columnspan=2)
         row_count += 1
         
         nb.Label(frame,
@@ -192,13 +197,13 @@ class PowerPlayProgress:
                     '   Orange - always orange\n' +
                     '   Match theme - match the EDMC theme colour',
             justify=tk.LEFT) \
-        .grid(row=row_count-2, column=1, padx=5, sticky=tk.NW)
+        .grid(row=row_count-2, column=2, padx=5, sticky=tk.NW, columnspan=2)
         nb.OptionMenu(
             frame,
             self.options_view_bar_colour,
             self.options_view_bar_colour.get(),
             *self.bar_colours
-        ).grid(row=row_count-1, column=1, padx=15, sticky=tk.W)
+        ).grid(row=row_count-1, column=2, padx=15, sticky=tk.W, columnspan=2)
 
         return frame
     
@@ -213,6 +218,7 @@ class PowerPlayProgress:
         """
         # You need to cast to `int` here to store *as* an `int`, so that
         # `config.get_int()` will work for re-loading the value.
+        config.set('options_view_progress_bar', bool(self.options_view_progress_bar.get()))
         config.set('options_view_totals', bool(self.options_view_totals.get()))
         config.set('options_view_merits_by_systems', bool(self.options_view_merits_by_systems.get()))
         config.set('options_view_merits_by_activities', bool(self.options_view_merits_by_activities.get()))
@@ -329,6 +335,9 @@ class PowerPlayProgress:
         return line_ending.join(result_lines) + line_ending
 
     def copy_to_clipboard_text(self):
+        if not self.options_view_totals.get() and not self.options_view_merits_by_systems.get() and not self.options_view_powerplay_commodities.get() and not self.options_view_merits_by_activities.get():
+            messagebox.showinfo("No data to copy", "No data to copy to clipboard. Try showing somthing first!")
+            return
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
         if self.options_view_totals.get(): 
@@ -342,6 +351,9 @@ class PowerPlayProgress:
         self.frame.update()  # Ensure clipboard updates
 
     def copy_to_clipboard_discord(self):
+        if not self.options_view_totals.get() and not self.options_view_merits_by_systems.get() and not self.options_view_powerplay_commodities.get() and not self.options_view_merits_by_activities.get():
+            messagebox.showinfo("No data to copy", "No data to copy to clipboard. Try showing somthing first!")
+            return
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
         if self.options_view_totals.get(): 
@@ -527,15 +539,22 @@ class PowerPlayProgress:
         locale.setlocale(locale.LC_ALL, default_locale[0])
 
         ## Update the progress bar and label with the current session data
-        self.progressbar_frame.grid()
-        self.pb.canvas.grid()
-        self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
-        self.pb.update_progress(round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2))
-        
-        if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
-            self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
-        else: # orange or green
-            self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
+        if self.options_view_progress_bar.get():
+            self.progressbar_frame.grid()
+            self.pb.canvas.grid()
+            self.powerplay_level_label.grid()
+            self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
+            self.pb.update_progress(round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2))
+
+            if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
+                self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
+            else: # orange or green
+                self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
+        else:
+            self.powerplay_level_label.grid_remove()
+            self.progressbar_frame.grid_remove()
+            self.pb.canvas.grid_remove()
+            self.pb.canvas.grid_remove()
 
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
