@@ -180,6 +180,16 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:28Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"krait_mkii", "Ship_Localised":"Krait Mk II", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Weltschmertz;", "PilotName_Localised":"Weltschmertz", "PilotRank":"Master", "ShieldHealth":64.881157, "HullHealth":100.000000, "Faction":"Terra Formations Industries", "LegalStatus":"Wanted", "Bounty":602879})
         self.recent_journal.add_entry({"timestamp":"2025-05-19T19:57:35Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":91, "TotalMerits":1207320})
         self.assertTrue(self.recent_journal.isBounty)
+
+    def test_is_bounty3(self):
+        """
+        Test the isBounty property again.
+        """
+        self.recent_journal.add_entry({"timestamp":"2025-05-30T17:24:33Z","event":"ShipTargeted","TargetLocked":True,"Ship":"cobramkiv","Ship_Localised":"Cobra Mk IV","ScanStage":0})
+        self.recent_journal.add_entry({"timestamp":"2025-05-30T17:24:44Z","event":"Bounty","Rewards":[{"Faction":"Daibamba Progressive Party","Reward":193578}],"PilotName":"$npc_name_decorate:#name=James Turner;","PilotName_Localised":"James Turner","Target":"cobramkiv","Target_Localised":"Cobra Mk IV","TotalReward":193578,"VictimFaction":"Daibamba Progressive Party"})
+        self.recent_journal.add_entry({"timestamp":"2025-05-30T17:24:45Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":4800,"TotalMerits":1219057})
+        self.recent_journal.add_entry({"timestamp":"2025-05-30T17:24:45Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":75,"TotalMerits":1219132})
+        self.assertTrue(self.recent_journal.isBounty)
         
 if __name__ == "__main__":
     unittest.main()
