@@ -131,10 +131,15 @@ class RecentJournal:
             # First entry must be powerplaymerits
             if self.__journal_entries_log[0].get("event", "").lower() != "powerplaymerits":
                 return False
-            # Scan through subsequent entries, skipping shiptargeted, looking for bounty
+            # Allow skipping a single additional powerplaymerits event after the first, a second might be a weekly mission completion
+            # also skip shiptargeted events
+            skipped_merits = False
             for entry in self.__journal_entries_log[1:]:
                 event = entry.get("event", "").lower()
                 if event == "shiptargeted":
+                    continue
+                if event == "powerplaymerits" and not skipped_merits:
+                    skipped_merits = True
                     continue
                 if event == "bounty":
                     return True

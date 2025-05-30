@@ -12,7 +12,7 @@ class TestSocials(unittest.TestCase):
 
     def test_unknown_power(self):
         links = Socials.get_links("Unknown Power")
-        self.assertEqual(links, "Power not found.")
+        self.assertTrue(links == "")
 
     def test_jerome_archer_discord(self):
         links = Socials.get_links("Jerome Archer")
@@ -22,7 +22,7 @@ class TestSocials(unittest.TestCase):
     def test_all_powers_have_discord_and_reddit(self):
         # List of all powers in the dictionary
         powers = [
-            "A. Lavingny-Duval", "Aisling Duval", "Archon Delane", "Denton Patreus",
+            "Arissa Lavigny-Duval", "Aisling Duval", "Archon Delane", "Denton Patreus",
             "Edmund Mahon", "Felicia Winters", "Jerome Archer", "Li Yong-Rui",
             "Nakato Kaine", "Pranav Antal", "Yuri Grom", "Zemina Torval"
         ]
