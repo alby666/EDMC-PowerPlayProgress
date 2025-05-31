@@ -8,23 +8,23 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 <img src="screen_shot.png"> <img src="screen_shot_dark.png">
 
-* IMPROVED: Visual progress between ranks, cleared progress bar and customisible colours
-* NEW: Links to Reddit and Discord sites for your Power
+* Visual progress between ranks, cleared progress bar and customisible colours
+* Links to Reddit and Discord sites for your Power
 * Total merits between dock/death events 
-* IMPROVED: Merits gained per system - clickable systems with links to Inara, EDSM & Spansh
+* Merits gained per system - clickable systems with links to Inara, EDSM & Spansh
 * Tracks power play commodities collections & deliveries by the ton 
   * Count per Power commodity type
-  * NEW: Count per Power data
+  * Count per Power data
   * Count delivered by system
-* NEW: Ability to reset the progress counters
+* Ability to reset the progress counters
 * Merits by Activity
 
     <img src="screen_shot_by_activities.png">
 
   * Ship/Wake scans
-  * IMPROVED: Bounties (even less now assigned to unknowns!!)
+  * Bounties (even less now assigned to unknowns!!)
   * Power play commodities deliveries
-  * Donation and aid missions
+  * IMPROVED: Donation and aid missions (duplicate journal entries bug still an issue but EDMC-PPP now tracks the donation merits correctly with the error entries being allocated to unknowns)
   * Scan Data Links
   * Holoscreen Hacks
   * Rare Goods

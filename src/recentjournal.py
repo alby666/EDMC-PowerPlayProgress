@@ -176,6 +176,16 @@ class RecentJournal:
                         and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
+        
+    def removeDonationMissionLogs(self) -> None:
+        """
+        Removes the second donation mission merits entry if it exists.
+        This is used to prevent double counting of donation missions.
+        """
+        if self.isDonationMissionMeritsFirst or self.isDonationMissionMeritsSecond:
+            #logger.debug(f"Removing second donation mission merits entry: {self.__journal_entries_log[0]}")
+            self.__journal_entries_log.pop(0)
+            self.__journal_entries_log.pop(0)
                    
     @property
     def isDonationMissionMeritsFirst(self) -> bool:
