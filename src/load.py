@@ -88,25 +88,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
     #        f', event = "{entry["event"]}"'
     #)
     global wait_for_multi_sell_carto_data
-    global wait_for_donation_mission_merits
+
     locale.setlocale(locale.LC_ALL, '')
     new_event = False
     ppp.recent_journal_log.add_entry(entry)
-
-    """
-    if wait_for_donation_mission_merits > 0:
-        logger.debug(f"Waiting for donation mission merits: {wait_for_donation_mission_merits}")
-        wait_for_donation_mission_merits -= 1
-
-    if wait_for_donation_mission_merits == 0:
-        if ppp.recent_journal_log.isDonationMissionMeritsSecond:
-            logger.debug("Processing donation mission merits second")
-            ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
-            ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
-            wait_for_donation_mission_merits = -1
-            ppp.last_merits_gained = 0
-            ppp.recent_journal_log.removeDonationMissionLogs()
-    """
 
     if wait_for_multi_sell_carto_data > 0: 
         logger.debug(f"Waiting for multi sell carto data: {wait_for_multi_sell_carto_data}")
@@ -256,12 +241,6 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_session.power_play_rank = ppp.CurrentRank(entry["TotalMerits"])
                 ppp.starting_merits = int(entry["TotalMerits"]) - int(entry["MeritsGained"])
                 ppp.total_merits = int(entry["TotalMerits"])  
-
-                #if system != '':
-                #    ppp.current_system = SystemProgress()
-                #    ppp.current_system.system = system
-                #    ppp.current_system.earnings = 0
-                #    ppp.systems.append(ppp.current_system)
 
             #Record the merits gained
             found = False
