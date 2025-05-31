@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import locale
+import re
 import tkinter as tk
 from consts import PLUGIN_NAME
 from sessionprogress import SessionProgress
@@ -21,6 +22,7 @@ from powerplayprogress import PowerPlayProgress
 
 logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 wait_for_multi_sell_carto_data = -1
+wait_for_donation_mission_merits = -1
 ppp = PowerPlayProgress()
 
 # Note that all of these could be simply replaced with something like:
@@ -86,9 +88,25 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
     #        f', event = "{entry["event"]}"'
     #)
     global wait_for_multi_sell_carto_data
+    global wait_for_donation_mission_merits
     locale.setlocale(locale.LC_ALL, '')
     new_event = False
     ppp.recent_journal_log.add_entry(entry)
+
+    """
+    if wait_for_donation_mission_merits > 0:
+        logger.debug(f"Waiting for donation mission merits: {wait_for_donation_mission_merits}")
+        wait_for_donation_mission_merits -= 1
+
+    if wait_for_donation_mission_merits == 0:
+        if ppp.recent_journal_log.isDonationMissionMeritsSecond:
+            logger.debug("Processing donation mission merits second")
+            ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
+            ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
+            wait_for_donation_mission_merits = -1
+            ppp.last_merits_gained = 0
+            ppp.recent_journal_log.removeDonationMissionLogs()
+    """
 
     if wait_for_multi_sell_carto_data > 0: 
         logger.debug(f"Waiting for multi sell carto data: {wait_for_multi_sell_carto_data}")
@@ -268,9 +286,10 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
             #Donations missions are a bit tricky as they can be completed after the merits are awarded.
-            elif ppp.recent_journal_log.isDonationMissionMeritsFirst and not ppp.recent_journal_log.isDonationMissionMeritsSecond: 
-                logger.debug(f"Donation mission merits first: {entry}")
+            elif ppp.recent_journal_log.isDonationMissionMeritsFirst: 
+                logger.debug(f"Donation mission merits first: {entry['MeritsGained']}")
                 ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
+                ppp.recent_journal_log.removeDonationMissionLogs()
             elif ppp.recent_journal_log.isScanDataLinks: ppp.current_session.activities.add_scan_data_links_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
@@ -285,6 +304,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isCommitCrimes: ppp.current_session.activities.add_commit_crimes_merits(entry["MeritsGained"])
             else: 
                 ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
+                logger.debug(f"Unknowns: {entry['MeritsGained']}")
 
             ppp.last_merits_gained = entry["MeritsGained"]
         case 'powerplayrank':
@@ -311,16 +331,15 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
-            new_event = True
-            if ppp.current_session.activities.get_unknown_merits() > 0 and ppp.recent_journal_log.isDonationMissionMeritsSecond:
-                #Move the merits from the unknown activity to the donation mission activity
-                logger.debug(f"Donation mission merits second: {entry}")
+            if ppp.recent_journal_log.isDonationMissionMeritsSecond:
+                #We have waited for 1 journal entries to be more sure we have all the data
+                logger.debug(f"Processing donation mission merits second, unknownn merits: {ppp.current_session.activities.get_unknown_merits()}, last merits gained: {ppp.last_merits_gained}")
                 ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
-                if ppp.current_session.activities.get_unknown_merits() >= ppp.last_merits_gained:
-                    ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
-                #do not process any other options for previous merits gained
-                ppp.last_merits_gained = 0
-        
+                ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
+                logger.debug(f"Processing donation mission merits second, after unknownn merits: {ppp.current_session.activities.get_unknown_merits()}")
+                ppp.recent_journal_log.removeDonationMissionLogs()
+                new_event = True
+                    
         case 'multisellexplorationdata':
             #wait for 5 further journal entries before processing, 5 is a guess, even with a full page this should cover it most times
             wait_for_multi_sell_carto_data = 5

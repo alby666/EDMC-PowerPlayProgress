@@ -22,9 +22,9 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
     <img src="screen_shot_by_activities.png">
 
   * Ship/Wake scans
-  * IMPROVED: Bounties (even less now assigned to unknowns!!)
+  * Bounties (even less now assigned to unknowns!!)
   * Power play commodities deliveries
-  * Donation and aid missions
+  * IMPROVED: Donation and aid missions (duplicate journal entries bug still an issue but EDMC-PPP now tracks the donation merits correctly with the error entries being allocated to unknowns)
   * Scan Data Links
   * Holoscreen Hacks
   * Rare Goods
