@@ -117,7 +117,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-08T20:23:51Z","event":"Location","DistFromStarLS":313.110615,"Docked":true,"StationName":"Pratchett Gateway","StationType":"Orbis","MarketID":3226027008,"StationFaction":{"Name":"Casual Crew"},"StationGovernment":"$government_Democracy;","StationGovernment_Localised":"Democracy","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Agri;","StationEconomy_Localised":"Agriculture","StationEconomies":[{"Name":"$economy_Agri;","Name_Localised":"Agriculture","Proportion":1.0}],"Taxi":false,"Multicrew":false,"StarSystem":"Tobala","SystemAddress":3618266663283,"StarPos":[23.34375,-42.46875,79.3125],"SystemAllegiance":"Independent","SystemEconomy":"$economy_Agri;","SystemEconomy_Localised":"Agriculture","SystemSecondEconomy":"$economy_Terraforming;","SystemSecondEconomy_Localised":"Terraforming","SystemGovernment":"$government_Democracy;","SystemGovernment_Localised":"Democracy","SystemSecurity":"$SYSTEM_SECURITY_medium;","SystemSecurity_Localised":"Medium Security","Population":4779808034,"Body":"Pratchett Gateway","BodyID":47,"BodyType":"Station",
             # "ControllingPower":"Denton Patreus","Powers":["Denton Patreus","Yuri Grom","Jerome Archer"],"PowerplayState":"Fortified","PowerplayStateControlProgress":0.278852,"PowerplayStateReinforcement":11942,"PowerplayStateUndermining":88,"Factions":[{"Name":"Revolutionary Tobala Democrats","FactionState":"None","Government":"Democracy","Influence":0.014985,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-22.0847},{"Name":"Tobala Vision Industries","FactionState":"None","Government":"Corporate","Influence":0.00999,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Traditional Tobala Nationalists","FactionState":"None","Government":"Dictatorship","Influence":0.011988,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0},{"Name":"Tobala Gold Posse","FactionState":"None","Government":"Anarchy","Influence":0.00999,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-18.7796},{"Name":"Tobala Jet Creative & Co","FactionState":"None","Government":"Corporate","Influence":0.034965,"Allegiance":"Federation","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":-9.51682,"RecoveringStates":[{"State":"PublicHoliday","Trend":0}]},{"Name":"Loosely Organized Lunatics","FactionState":"None","Government":"Dictatorship","Influence":0.144855,"Allegiance":"Empire","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"RecoveringStates":[{"State":"Blight","Trend":0}]},{"Name":"Casual Crew","FactionState":"None","Government":"Democracy","Influence":0.773227,"Allegiance":"Independent","Happiness":"$Faction_HappinessBand2;","Happiness_Localised":"Happy","MyReputation":0.0,"PendingStates":[{"State":"Expansion","Trend":0}]}],"SystemFaction":{"Name":"Casual Crew"}}
             new_event = True
-            logger.debug("Location event")
+            #logger.debug(f"Location event: {state}")
             found = False
             for sys in ppp.systems:
                 if sys.system == system:
@@ -148,6 +148,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system.orig_power_play_state_control_progress = entry["PowerplayStateControlProgress"]
                 ppp.current_system.orig_power_play_state_reinforcement = entry["PowerplayStateReinforcement"]
                 ppp.current_system.orig_power_play_state_undermining = entry["PowerplayStateUndermining"]
+                ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
+                ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
+                ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
                 ppp.systems.append(ppp.current_system)
 
         case 'fsdjump':
@@ -183,6 +186,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system.orig_power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
                 ppp.current_system.orig_power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
                 ppp.current_system.orig_power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
+                ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
+                ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
+                ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
                 ppp.systems.append(ppp.current_system)
             
         case 'died' | 'docked':
@@ -256,12 +262,16 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             if not found:
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
+                ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
+                ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
+                ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
                 ppp.current_system.earnings = entry["MeritsGained"]
                 ppp.systems.append(ppp.current_system)
 
             #Assign merits to appropriate activity...
-            #Bounties need to be before scan as they could be a scan related to the bounty
+            #Bounties then rival kills need to be before scan as they could be a scan related to the bounty
             if ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isRivalPowerKills: ppp.current_session.activities.add_rival_power_kills_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
             #Donations missions are a bit tricky as they can be completed after the merits are awarded.
@@ -303,6 +313,9 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.current_system = SystemProgress()
                 ppp.current_system.system = system
                 ppp.current_system.earnings = 0
+                ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
+                ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
+                ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
                 ppp.systems.append(ppp.current_system)
 
         case 'missioncompleted':

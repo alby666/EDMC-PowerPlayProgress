@@ -17,7 +17,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Count per Power data
   * Count delivered by system
 * Ability to reset the progress counters
-* Merits by Activity
+* NEW & IMPROVED: Merits by Activity - rival power kills tracking & better ship scanning
 
     <img src="screen_shot_by_activities.png">
 
@@ -36,6 +36,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Mined Commodities
   * On Foot activities
   * NEW: Commit Crimes
+  * NEW: Rival Power Kills
   * Unknowns (the journals have limited infomation so some will slip through the net when assigning them!)
 
   Will continue to improve the tracking and correct assignment to the correct systems but the current journal info is a limiting factor... :(

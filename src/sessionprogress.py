@@ -20,9 +20,9 @@ class SessionProgress(object):
                 self.tonnage = tonnage
 
         def __init__(self) -> None:
-            self.activities_type_list = {0: "Unknown:", 1: "Ship\Wake Scans:", 2: "Bounties:", 3: "Powerplay Deliveries:", 4: "Donation Missions:", 5: "Scan Data Links:", 6: "Holoscreen Hacks:"
+            self.activities_type_list = {0: "Unknown:", 1: "Ship\\Wake Scans:", 2: "Bounties:", 3: "Powerplay Deliveries:", 4: "Donation Missions:", 5: "Scan Data Links:", 6: "Holoscreen Hacks:"
                                          , 7: "Rare Goods:", 8: "Salvage:", 9 : "Cartography:", 10: "High Value Commodities:", 11: "Low Value Commodities:", 12: "Exobiology:"
-                                         , 13: f"{mined_heading}", 14:"OnFoot:", 15: "Commit Crimes:"}
+                                         , 13: f"{mined_heading}", 14:"OnFoot:", 15: "Commit Crimes:", 16: "Rival Power Kills:"}
             self.activities: list[SessionProgress.Activities.Activity] = []
             self.mined_commodities: list[SessionProgress.Activities.MinedCommodity] = []
             for item in self.activities_type_list:
@@ -106,6 +106,10 @@ class SessionProgress(object):
             self.activities[15].merits += merits
             return self.activities[15].merits
         
+        def add_rival_power_kills_merits(self, merits) -> int:
+            self.activities[16].merits += merits
+            return self.activities[16].merits
+
         #Wake scans not separate as they do not have enough detail to acuurately track
         #def add_wake_scans_merits(self, merits) -> int:
         #    self.activities[15].merits += merits
