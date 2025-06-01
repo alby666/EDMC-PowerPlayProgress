@@ -240,6 +240,14 @@ class TestRecentJournal(unittest.TestCase):
         self.assertTrue(self.recent_journal.isDonationMissionMeritsFirst)
         self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
 
+    def test_isScan(self):
+        """
+        Test the isScan property.
+        """
+        self.recent_journal.add_entry({"timestamp":"2025-06-01T07:58:22Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"type6", "Ship_Localised":"Type-6 Transporter", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Alexander Lavrov;", "PilotName_Localised":"Alexander Lavrov", "PilotRank":"Harmless", "ShieldHealth":100.000000, "HullHealth":100.000000, "Faction":"Labe State Holdings", "LegalStatus":"Clean" })
+        self.recent_journal.add_entry({ "timestamp":"2025-06-01T07:58:22Z", "event":"MaterialCollected", "Category":"Encoded", "Name":"shieldcyclerecordings", "Name_Localised":"Distorted Shield Cycle Recordings", "Count":3 })
+        self.recent_journal.add_entry({ "timestamp":"2025-06-01T07:58:22Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":13, "TotalMerits":1231266 })
+        self.assertTrue(self.recent_journal.isScan)
 
 if __name__ == "__main__":
     unittest.main()

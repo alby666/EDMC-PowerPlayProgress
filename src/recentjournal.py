@@ -98,17 +98,15 @@ class RecentJournal:
     
     @property
     def isShipScan(self) -> bool:
-        #logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
-        if len(self.__journal_entries_log) < 3:
+        #{ "timestamp":"2025-05-30T20:02:05Z", "event":"ShipTargeted", "TargetLocked":true, "Ship":"viper_mkiv", "Ship_Localised":"Viper Mk IV", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Lehikko;", "PilotName_Localised":"Lehikko", "PilotRank":"Competent", "ShieldHealth":100.000000, "HullHealth":100.000000, "Faction":"Li Yong-Rui", "LegalStatus":"Clean", "Power":"Li Yong-Rui" }
+        try:
+            #logger.debug(f"iscan recent journal entries: {self.__journal_entries_log}")
+            return (((self.__journal_entries_log[1].get("event", "").lower() == "shiptargeted" and self.__journal_entries_log[1].get("ScanStage", 0) >= 2)
+                or (self.__journal_entries_log[2].get("event", "").lower() == "shiptargeted" and self.__journal_entries_log[2].get("ScanStage", 0) >= 2))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"
+                and int(self.__journal_entries_log[0].get("MeritsGained", 0)) <= 40)
+        except IndexError as e:
             return False
-        else:
-            #logger.debug(f"journal entries 1: {self.__journal_entries_log[1].get('event', '').lower() == 'shiptargeted'}")
-            #logger.debug(f"journal entries 2: {self.__journal_entries_log[2].get('event', '').lower() == 'shiptargeted'}")
-            #logger.debug(f"journal entries 0: {int(self.__journal_entries_log[0].get('MeritsGained', 0)) <= 40}")
-            #logger.debug(f"num: {self.__journal_entries_log[0].get('MeritsGained', 0)}")
-            return ((self.__journal_entries_log[1].get("event", "").lower() == "shiptargeted"
-                or self.__journal_entries_log[2].get("event", "").lower() == "shiptargeted")
-                and (int(self.__journal_entries_log[0].get("MeritsGained", 0)) <= 40))
     
     @property
     def isWakeScan(self) -> bool:
@@ -121,7 +119,17 @@ class RecentJournal:
                     and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
         except IndexError as e:
             return False
-        
+    
+    @property
+    def isRivalPowerKills(self) -> bool:
+        try:
+            #{ "timestamp":"2025-05-30T20:02:33Z", "event":"ShipTargeted", "TargetLocked":false }
+            return (((self.__journal_entries_log[1].get("event", "").lower() == "shiptargeted" and not bool(self.__journal_entries_log[1].get("TargetLocked","true")))
+                     or (self.__journal_entries_log[2].get("event", "").lower() == "shiptargeted" and not bool(self.__journal_entries_log[2].get("TargetLocked","true"))))
+                and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits")
+        except IndexError as e:
+            return False
+
     @property
     def isBounty(self) -> bool:
         #logger.debug(f"isbounty recent journal entries: {self.__journal_entries_log}")
