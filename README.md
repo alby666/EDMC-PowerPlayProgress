@@ -92,11 +92,11 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 [PowerPlayProgress] Copyright © 2025 [alby666]
 
-Licensed under the [GNU Public License (GPL)][GPLv2] version 2 or later.
+Licensed under [MIT].
 
 [EDMC]: https://github.com/EDCD/EDMarketConnector/wiki
 [PowerPlayProgress]: https://github.com/alby666/EDMC-PowerPlayProgress
 [latestrelease]: https://github.com/alby666/EDMC-PowerPlayProgress/releases/latest
-[GPLv2]: http://www.gnu.org/licenses/gpl-2.0.html
+[MIT]: https://github.com/alby666/EDMC-PowerPlayProgress/blob/main/LICENSE
 [alby666]: https://github.com/alby666
 
