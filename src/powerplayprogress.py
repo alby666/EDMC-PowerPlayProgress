@@ -437,10 +437,14 @@ class PowerPlayProgress:
 
         # Data rows
         for row, (commodity, export, distance) in enumerate(sorted_rares, start=1):
-            ttk.Label(win, text=getattr(export, "commodityName", "")).grid(row=row, column=0, padx=5, pady=2)
-            MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(getattr(export, "systemName", "")), 
-                                popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', getattr(export, 'systemName', ''))}", 
-                                text=getattr(export, 'systemName', '')).grid(row=row, column=1, padx=5, pady=2)
+            ttk.Label(win, text=commodity).grid(row=row, column=0, padx=5, pady=2)
+            system = getattr(export, "systemName", "")
+            MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(system), 
+                                popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', system)}", 
+                                text=f"{system}").grid(row=row, column=1, padx=5, pady=2)
+            #MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(getattr(export, "systemName", "")), 
+            #                    popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', getattr(export, 'systemName', ''))}", 
+            #                    text=getattr(export, 'systemName', '')).grid(row=row, column=1, padx=5, pady=2)
             #ttk.Label(win, text=getattr(export, "systemName", "")).grid(row=row, column=1, padx=5, pady=2)
             ttk.Label(win, text=getattr(export, "stationName", "")).grid(row=row, column=2, padx=5, pady=2)
             # Convert to mapped value
