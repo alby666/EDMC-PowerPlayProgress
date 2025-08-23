@@ -55,6 +55,7 @@ class PowerPlayProgress:
         self.options_view_export_format = tk.StringVar(value=config.get_str('options_view_export_format', default='Text'))
         self.options_view_bar_colour = tk.StringVar(value=config.get_str('options_view_bar_colour', default=self.bar_colours[2]))
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
+        self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
 
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -86,6 +87,7 @@ class PowerPlayProgress:
         self.merits_by_activty_frame: tk.Frame = tk.Frame()
         self.buttons_frame: tk.Frame = tk.Frame()
         self.socials_power_label: tk.Label = tk.Label()
+
         self.flex_row = 7
         self.last_merits_gained = 0
         logger.info("PowerPlayProgress instantiated")
@@ -175,11 +177,12 @@ class PowerPlayProgress:
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
 
-        export_options = ['Text', 'Discord']
+        export_options = ['Text', 'Discord', 'Custom']
         nb.Label(frame,
             text='Copy to Clipboard format:\n' +
                     '   Text - plain ascii text\n' +
-                    '   Discord - markup format, better suited for pasting to Discord',
+                    '   Discord - markup format, better suited for pasting to Discord\n' +
+                    '   Custom - custom format, one line by system',
             justify=tk.LEFT) \
         .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
         row_count+= 1
@@ -190,20 +193,29 @@ class PowerPlayProgress:
             *export_options
         ).grid(row=row_count, padx=15, sticky=tk.W, columnspan=2)
         row_count += 1
-        
+
+        nb.Label(frame,
+            text='Custom format:',
+            justify=tk.LEFT) \
+        .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
+        row_count += 1
+        nb.Entry(frame, textvariable=self.options_custom_format, width=50) \
+            .grid(row=row_count, column=0, padx=15, sticky=tk.W, columnspan=2)
+        row_count += 1
+
         nb.Label(frame,
             text='Progress bar colour:\n' +
                     '   Green - always green\n' +
                     '   Orange - always orange\n' +
                     '   Match theme - match the EDMC theme colour',
             justify=tk.LEFT) \
-        .grid(row=row_count-2, column=2, padx=5, sticky=tk.NW, columnspan=2)
+        .grid(row=row_count-4, column=2, padx=5, sticky=tk.NW, columnspan=2)
         nb.OptionMenu(
             frame,
             self.options_view_bar_colour,
             self.options_view_bar_colour.get(),
             *self.bar_colours
-        ).grid(row=row_count-1, column=2, padx=15, sticky=tk.W, columnspan=2)
+        ).grid(row=row_count-3, column=2, padx=15, sticky=tk.W, columnspan=2)
 
         return frame
     
@@ -229,6 +241,7 @@ class PowerPlayProgress:
         config.set('options_view_export_format', str(self.options_view_export_format.get()))
         config.set('options_view_bar_colour', str(self.options_view_bar_colour.get()))
         config.set('options_view_socials', bool(self.options_view_socials.get()))
+        config.set('options_custom_format', str(self.options_custom_format.get()))
         
         if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
@@ -366,6 +379,21 @@ class PowerPlayProgress:
             self.frame.clipboard_append(self.frame_text_grid(self.merits_by_activty_frame, discord=True))
         self.frame.update()  # Ensure clipboard updates
 
+    def copy_to_clipboard_custom_format(self) -> None:
+        progress_format = self.options_custom_format.get()
+        self.frame.clipboard_clear()
+        for system in self.systems:
+            if system.earnings > 0:
+                fmt_args = {
+                    'system': system.system,
+                    'system_url': self.system_url(system.system),
+                    'state': system.power_play_state,
+                    'progress': f"{round(system.power_play_state_control_progress * 100, 2)}%",
+                    'merits': system.earnings,
+                }
+                progress_text = progress_format.format(**fmt_args)
+                self.frame.clipboard_append(progress_text + "\n")
+
     def version_check(self) -> str:
         try:
             req = requests.get(url='https://api.github.com/repos/alby666/EDMC-PowerPlayProgress/releases/latest')
@@ -407,6 +435,7 @@ class PowerPlayProgress:
             self.current_session.commodities_delivered_types = []
             self.current_session.activities = SessionProgress.Activities()
             self.Update_Ppp_Display()
+
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
@@ -739,6 +768,8 @@ class PowerPlayProgress:
         self.buttons_frame.grid(row=cur_row, column=0, columnspan=2, sticky="NSEW")
         if self.options_view_export_format.get() == 'Text':
             self.copy_button.config(command=self.copy_to_clipboard_text)
+        elif self.options_view_export_format.get() == 'Custom':
+            self.copy_button.config(command=self.copy_to_clipboard_custom_format)
         else:
             self.copy_button.config(command=self.copy_to_clipboard_discord)
         cur_row += 1
