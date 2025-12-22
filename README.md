@@ -17,32 +17,34 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Count per Power data
   * Count delivered by system
 * Ability to reset the progress counters
-* NEW & IMPROVED: Merits by Activity - rival power kills tracking & better ship scanning
+* Merits by Activity - rival power kills tracking & better ship scanning
 
     <img src="screen_shot_by_activities.png">
 
   * Ship/Wake scans
   * Bounties (even less now assigned to unknowns!!)
   * Power play commodities deliveries
-  * IMPROVED: Donation and aid missions (duplicate journal entries bug still an issue but EDMC-PPP now tracks the donation merits correctly with the error entries being allocated to unknowns)
+  * Donation and aid missions (duplicate journal entries bug still an issue but EDMC-PPP now tracks the donation merits correctly with the error entries being allocated to unknowns)
   * Scan Data Links
   * Holoscreen Hacks
   * Rare Goods
   * Salvage
-  * IMPROVED: Cartograhy - large multi-sell activities now tracked
+  * Cartograhy - large multi-sell activities now tracked
   * High Value Commodities
   * Low Value Commodities
   * Exobiology
   * Mined Commodities
   * On Foot activities
-  * NEW: Commit Crimes
-  * NEW: Rival Power Kills
+  * Commit Crimes
+  * Rival Power Kills
   * Unknowns (the journals have limited infomation so some will slip through the net when assigning them!)
 
   Will continue to improve the tracking and correct assignment to the correct systems but the current journal info is a limiting factor... :(
 
 * Preferences to show/hide all recorded info
-  * NEW: Customisble progress bar colour, green, orange or match the EDMC theme
+  * Customisble progress bar colour, green, orange or match the EDMC theme
+  * NEW: Custom format for copy to clipboard, use any of the following placeholders to format the output
+    * default: [{system}]({system_url}) - {merits} - {state} e.g. [Alrai Sector HM-V b2-6](https://inara.cz/elite/starsystem/?search=13864288789953) - 20 - Exploited
 
   <img src="screen_shot_preferences.png" width="500" height="300">
 
@@ -70,13 +72,14 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 ### Functions
 
-<img src="screen_shot_buttons_dark.png"> <img src="screen_shot_buttons_light.png">
+<img src="screen_shot_buttons_dark.png">
 
 * Copy Progress - copies the current displayed progress to the clipboard, configure it in preferences for markup/Discord friendly or text output
 
   <img src="screen_shot_clipboard_prefs.png">
 
-* Reset Progress - resets the current progress counters (except for the overall session total)
+* Reset - resets the current progress counters (except for the overall session total)
+* Reset Session - resets the Total Merits this session (helpful for clearing duplicate errors)
 
 ## Requirements
 * [EDMC] version 5.12 and above (python 3.11)
