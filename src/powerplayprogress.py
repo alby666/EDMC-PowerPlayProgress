@@ -76,6 +76,8 @@ class PowerPlayProgress:
         self.powerplay_commodities_label = tk.Label()
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
+        self.reset_button_button: tk.Button = tk.Button()
+        self.reset_session_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
         self.socials_link_discord: MultiHyperlinkLabel = MultiHyperlinkLabel()
         self.socials_link_reddit: MultiHyperlinkLabel = MultiHyperlinkLabel()
@@ -124,7 +126,6 @@ class PowerPlayProgress:
         frame = nb.Frame(parent)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.grid(sticky=tk.NSEW)
 
         MultiHyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
                     url='https://github.com/alby666/EDMC-PowerPlayProgress/releases', underline=True) \
@@ -146,7 +147,6 @@ class PowerPlayProgress:
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
-        frame.grid(sticky=tk.NSEW)
 
         row_count = 0
         
@@ -199,7 +199,7 @@ class PowerPlayProgress:
             justify=tk.LEFT) \
         .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
         row_count += 1
-        nb.Entry(frame, textvariable=self.options_custom_format, width=50) \
+        nb.EntryMenu(frame, textvariable=self.options_custom_format, width=50) \
             .grid(row=row_count, column=0, padx=15, sticky=tk.W, columnspan=2)
         row_count += 1
 
@@ -391,8 +391,14 @@ class PowerPlayProgress:
                     'progress': f"{round(system.power_play_state_control_progress * 100, 2)}%",
                     'merits': system.earnings,
                 }
-                progress_text = progress_format.format(**fmt_args)
-                self.frame.clipboard_append(progress_text + "\n")
+                try:
+                    progress_text = progress_format.format(**fmt_args)
+                    self.frame.clipboard_append(progress_text + "\n")
+                except KeyError as ex:
+                    messagebox.showerror(
+                        "Format Error",
+                        f"Missing key in format: {ex}\nAvailable keys: {list(fmt_args.keys())}"
+                    )
 
     def version_check(self) -> str:
         try:
@@ -422,7 +428,7 @@ class PowerPlayProgress:
         """
         response = messagebox.askyesno(
             title="Reset Progress",
-            message="Are you sure you want to reset the progress?",
+            message="Are you sure you want to reset ALL the progress in this session?",
             icon=messagebox.WARNING,
         )
         if response:
@@ -436,6 +442,20 @@ class PowerPlayProgress:
             self.current_session.activities = SessionProgress.Activities()
             self.Update_Ppp_Display()
 
+    def reset_session_progress(self) -> None:
+        """
+        Reset the progress of the current session except for total merits.
+        """
+        response = messagebox.askyesno(
+            title="Reset Session Progress",
+            message="Are you sure you want to reset the Total Merit this session?",
+            icon=messagebox.WARNING,
+        )
+        if response:
+            #self.previous_session = self.current_session
+            #self.current_session = SessionProgress()
+            self.starting_merits = self.total_merits
+            self.Update_Ppp_Display()
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
@@ -529,18 +549,24 @@ class PowerPlayProgress:
 
         self.buttons_frame = tk.Frame(self.frame)
         self.buttons_frame.grid_columnconfigure(0, weight=0)
-        self.buttons_frame.grid_columnconfigure(1, weight=2)
-        self.buttons_frame.grid_columnconfigure(2, weight=1)
+        self.buttons_frame.grid_columnconfigure(1, weight=0)
+        self.buttons_frame.grid_columnconfigure(2, weight=0)
+        self.buttons_frame.grid_columnconfigure(3, weight=1)
         self.buttons_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
         self.copy_button = tk.Button(
             self.buttons_frame,
-            text="Copy Progress",
+            text="Copy",
             command=self.copy_to_clipboard_text
         )
         self.reset_button = tk.Button(
             self.buttons_frame,
-            text="Reset Progress",
+            text="Reset",
             command=self.reset_progress
+        )
+        self.reset_session_button = tk.Button(
+            self.buttons_frame,
+            text="Reset Session",
+            command=self.reset_session_progress
         )
         current_row += 1
 
@@ -773,8 +799,9 @@ class PowerPlayProgress:
         else:
             self.copy_button.config(command=self.copy_to_clipboard_discord)
         cur_row += 1
-        self.copy_button.grid(row=cur_row, column=0, sticky="W")
-        self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=5)
+        self.copy_button.grid(row=cur_row, column=0, sticky="W", padx=2)
+        self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=2)
+        self.reset_session_button.grid(row=cur_row, column=2, sticky="W", padx=2)
 
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)
