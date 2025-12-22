@@ -39,7 +39,7 @@ class RecentJournal:
     #These are the journal entries we are not interested in - we want meritible actions and the "powerplaymerits" entries
     noise = {"friends","receivetext","powerplay","powerplaycollect", "powerplayrank","powerplay","reservoirreplenished","sendtext", "receivetext", "communitygoal", 
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
-             "hulldamage", "repairall", "repair", "missionaccepted", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted",
+             "hulldamage", "repairall", "repair", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted",
              "storedships", "shipyard", "crimevictim"}
 
     rare_goods = {
@@ -73,18 +73,36 @@ class RecentJournal:
         self.__journal_entries_log: list = []
         self.__on_foot: bool = False
 
-    def add_entry(self, entry: dict) -> None:
+    def add_entry(self, entry: dict) -> bool:
+        event_type = entry.get("event", "").lower()
 
-        if entry.get("event", "").lower() == "supercruiseentry": self.__on_foot = False #In case the cmdr dies while on foot
-        if entry.get("event", "").lower() == "disembark" and bool(entry["OnPlanet"]) == True: self.__on_foot = True
-        if entry.get("event", "").lower() == "embark": self.__on_foot = False
+        # On foot state handling
+        if event_type == "supercruiseentry":
+            self.__on_foot = False
+        if event_type == "disembark" and bool(entry.get("OnPlanet")) is True:
+            self.__on_foot = True
+        if event_type == "embark":
+            self.__on_foot = False
 
-        if entry['event'].lower() not in self.noise:
-            #logger.debug(f"journal entries type: {type(self.__journal_entries_log)}")
+        # Skip duplicate powerplaymerits with same TotalMerits as last one,
+        # and remove the matching entry from the log if found
+        if event_type == "powerplaymerits":
+            for i, prev_entry in enumerate(self.__journal_entries_log):
+                if prev_entry.get("event", "").lower() == "powerplaymerits":
+                    if entry.get("TotalMerits") == prev_entry.get("TotalMerits"):
+                        # Remove the matching entry from the log
+                        #del self.__journal_entries_log[i]
+                        return False # Skip this entry
+                    break  # Only compare with the most recent previous powerplaymerits
+
+        if event_type not in self.noise:
             self.__journal_entries_log.insert(0, entry)
+        else:
+            return False
         # Keep only the last HISTORY_DEPTH entries
         if len(self.__journal_entries_log) > self.HISTORY_DEPTH:
             self.__journal_entries_log.pop()
+        return True
 
     # On foot entries are not recorded in the journal currently so the best we can do is group them together
     @property
@@ -179,21 +197,11 @@ class RecentJournal:
                 return False
             else:
                 #Depending on server load powerplay merits events can come before mission completed or vice versa
-                return (self.__journal_entries_log[0].get("event", "") == "MissionCompleted" 
+                return (self.__journal_entries_log[0].get("event", "").lower() == "missioncompleted" 
                         and re.match(self.donation_missions, self.__journal_entries_log[0].get("Name", ""))
                         and self.__journal_entries_log[1].get("event", "").lower() == "powerplaymerits")
         except IndexError as e:
             return False
-        
-    def removeDonationMissionLogs(self) -> None:
-        """
-        Removes the second donation mission merits entry if it exists.
-        This is used to prevent double counting of donation missions.
-        """
-        if self.isDonationMissionMeritsFirst or self.isDonationMissionMeritsSecond:
-            #logger.debug(f"Removing second donation mission merits entry: {self.__journal_entries_log[0]}")
-            self.__journal_entries_log.pop(0)
-            self.__journal_entries_log.pop(0)
                    
     @property
     def isDonationMissionMeritsFirst(self) -> bool:
