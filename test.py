@@ -1,28 +1,39 @@
 import tkinter as tk
-from src.canvasprogressbar import CanvasProgressBar
+from tkinter import ttk
 
-# Example Usage
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Canvas-Based Progress Bar")
+def greet():
+    result_label.config(text="Hello, Alan!")
 
-    progress_bar = CanvasProgressBar(root)
-    progress_bar.canvas.grid(row=0, column=0, padx=20, pady=20)  # Ensuring it's placed with grid()
+def calculate():
+    result_label.config(text=f"2 + 2 = {2 + 2}")
 
-    lbl = tk.Label(root, text=f"colour: {progress_bar.fg}")
-    lbl.grid(row=3, column=0, pady=10)
+def show_info():
+    result_label.config(text="This is a Tkinter dropdown toolbar demo.")
 
-    def increase_progress():
-        for i in range(101):
-            root.after(i * 20, lambda v=i: progress_bar.update_progress(v))
+# Main window
+root = tk.Tk()
+root.title("Toolbar Dropdown Button")
+root.geometry("350x200")
 
-    def change_colour():
-        # Toggle the color between green and orange
-        colour = "orange" if progress_bar.canvas.itemcget(progress_bar.progress_rect, "fill") == "green" else "green"
-        progress_bar.set_bar_colour(colour)
-        lbl.config(text=f"colour: {colour}")
+# Frame to simulate toolbar
+toolbar = ttk.Frame(root)
+toolbar.pack(pady=10)
 
-    tk.Button(root, text="Start Progress", command=increase_progress).grid(row=1, column=0, pady=10)
-    tk.Button(root, text="Change Colour", command=change_colour).grid(row=2, column=0, pady=10)
-    
-    root.mainloop()
+# Create Menubutton
+action_button = ttk.Menubutton(toolbar, text="Actions", direction="below")
+action_menu = tk.Menu(action_button, tearoff=0)
+
+# Add grouped actions
+action_menu.add_command(label="Greet", command=greet)
+action_menu.add_command(label="Calculate", command=calculate)
+action_menu.add_command(label="Show Info", command=show_info)
+
+action_button["menu"] = action_menu
+action_button.pack(side="left", padx=5)
+
+# Result label
+result_label = ttk.Label(root, text="", justify="left")
+result_label.pack(pady=20)
+
+# Run the app
+root.mainloop()

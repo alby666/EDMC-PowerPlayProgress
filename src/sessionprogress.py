@@ -28,7 +28,7 @@ class SessionProgress(object):
             for item in self.activities_type_list:
                 self.activities.append(SessionProgress.Activities.Activity(self.activities_type_list[item], 0))
 
-        def add_unknown_merits(self, merits) -> int:
+        def add_unknown_merits(self, merits: int) -> int:
             self.activities[0].merits += merits
             return self.activities[0].merits
         

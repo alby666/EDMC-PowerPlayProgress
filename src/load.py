@@ -271,14 +271,19 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #Assign merits to appropriate activity...
             #Bounties then rival kills need to be before scan as they could be a scan related to the bounty
             if ppp.recent_journal_log.isBounty: ppp.current_session.activities.add_bounty_merits(entry["MeritsGained"])
-            elif ppp.recent_journal_log.isRivalPowerKills: ppp.current_session.activities.add_rival_power_kills_merits(entry["MeritsGained"])
+            elif ppp.recent_journal_log.isRivalPowerKills: 
+                logger.debug(f"Is Rival kill: {entry['MeritsGained']}")
+                top_5 = ppp.recent_journal_log.entries[:5]
+                for log_entry in top_5:
+                    logger.debug(f"{log_entry}")
+                #logger.debug(f"Recent logs: {ppp.recent_journal_log.entries}")
+                ppp.current_session.activities.add_rival_power_kills_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isScan: ppp.current_session.activities.add_ship_scan_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isPowerPlayDelivery: ppp.current_session.activities.add_powerplay_delivery_merits(entry["MeritsGained"])
             #Donations missions are a bit tricky as they can be completed after the merits are awarded.
             elif ppp.recent_journal_log.isDonationMissionMeritsFirst: 
                 logger.debug(f"Donation mission merits first: {entry['MeritsGained']}")
                 ppp.current_session.activities.add_donation_mission_merits(entry["MeritsGained"])
-                ppp.recent_journal_log.removeDonationMissionLogs()
             elif ppp.recent_journal_log.isScanDataLinks: ppp.current_session.activities.add_scan_data_links_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isHoloscreenHack: ppp.current_session.activities.add_holoscreen_hacks_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isRareGoods: ppp.current_session.activities.add_rare_goods_merits(entry["MeritsGained"])
@@ -292,7 +297,7 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             elif ppp.recent_journal_log.isOnFoot: ppp.current_session.activities.add_on_foot_merits(entry["MeritsGained"])
             elif ppp.recent_journal_log.isCommitCrimes: ppp.current_session.activities.add_commit_crimes_merits(entry["MeritsGained"])
             else: 
-                ppp.current_session.activities.add_unknown_merits(entry["MeritsGained"])
+                ppp.current_session.activities.add_unknown_merits(int(entry["MeritsGained"]))
                 logger.debug(f"Unknowns: {entry['MeritsGained']}")
 
             ppp.last_merits_gained = entry["MeritsGained"]
@@ -323,13 +328,12 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
             #{"timestamp":"2025-04-19T13:19:53Z","event":"MissionCompleted","Faction":"United CD-63 1560 Bureau","Name":"Mission_AltruismCredits_name",
             # "LocalisedName":"Donate 1,000,000 Cr to the cause","MissionID":1012529686,"Donation":"1000000","Donated":1000000,"FactionEffects":[{"Faction":"United CD-63 1560 Bureau","Effects":[{"Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;","Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.","Trend":"UpGood"}],"Influence":[{"SystemAddress":2282942829282,"Trend":"UpGood","Influence":"++"}],"ReputationTrend":"UpGood","Reputation":"++"}]}
             #{"timestamp":"2025-04-19T13:19:53Z","event":"PowerplayMerits","Power":"Jerome Archer","MeritsGained":44,"TotalMerits":1113351}
-            if ppp.recent_journal_log.isDonationMissionMeritsSecond:
+            if ppp.current_session.activities.get_unknown_merits() > 0 and ppp.recent_journal_log.isDonationMissionMeritsSecond:
                 #We have waited for 1 journal entries to be more sure we have all the data
                 logger.debug(f"Processing donation mission merits second, unknownn merits: {ppp.current_session.activities.get_unknown_merits()}, last merits gained: {ppp.last_merits_gained}")
                 ppp.current_session.activities.add_donation_mission_merits(ppp.last_merits_gained)
                 ppp.current_session.activities.add_unknown_merits(-ppp.last_merits_gained)
                 logger.debug(f"Processing donation mission merits second, after unknownn merits: {ppp.current_session.activities.get_unknown_merits()}")
-                ppp.recent_journal_log.removeDonationMissionLogs()
                 new_event = True
                     
         case 'multisellexplorationdata':

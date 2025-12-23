@@ -7,10 +7,10 @@ class TestRecentJournal(unittest.TestCase):
         Set up a new RecentJournal instance before each test.
         """
         self.recent_journal = RecentJournal()
-        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:06:04Z","event":"Docked","StationName":"Hardwick Hub","StationType":"Coriolis","Taxi":False,"Multicrew":False,"StarSystem":"Nihursaga","SystemAddress":2999791389027,"MarketID":3228194304,"StationFaction":{"Name":"Nihursaga Coalition"},"StationGovernment":"$government_Confederacy;","StationGovernment_Localised":"Confederacy","StationAllegiance":"Federation","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Industrial;","StationEconomy_Localised":"Industrial","StationEconomies":[{"Name":"$economy_Industrial;","Name_Localised":"Industrial","Proportion":1.0}],"DistFromStarLS":232712.118768,"LandingPads":{"Small":17,"Medium":18,"Large":9}})
-        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:07:05Z", "event":"CommunityGoal", "CurrentGoals":[ { "CGID":818, "Title":"Support Winter's Forces in LP 855-34 ", "SystemName":"LP 855-34", "MarketName":"Rhea's Resilience", "Expiry":"2025-05-15T07:00:00Z", "IsComplete":False, "CurrentTotal":4392258, "PlayerContribution":0, "NumContributors":6424, "TopTier":{ "Name":"Tier 6", "Bonus":"" }, "TopRankSize":10, "PlayerInTopRank":False, "TierReached":"Tier 4", "PlayerPercentileBand":100, "Bonus":65000000 } ] })
-        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:05:27Z","event":"SupercruiseExit","Taxi":False,"Multicrew":False,"StarSystem":"Nihursaga","SystemAddress":2999791389027,"Body":"Hardwick Hub","BodyID":8,"BodyType":"Station"})
-        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:03:58Z","event":"ShipTargeted","TargetLocked":True,"Ship":"independant_trader","Ship_Localised":"Keelback","ScanStage":0})
+        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:06:04Z","event":"DockedTest","StationName":"Hardwick Hub","StationType":"Coriolis","Taxi":False,"Multicrew":False,"StarSystem":"Nihursaga","SystemAddress":2999791389027,"MarketID":3228194304,"StationFaction":{"Name":"Nihursaga Coalition"},"StationGovernment":"$government_Confederacy;","StationGovernment_Localised":"Confederacy","StationAllegiance":"Federation","StationServices":["dock","autodock","blackmarket","commodities","contacts","exploration","missions","outfitting","crewlounge","rearm","refuel","repair","shipyard","tuning","engineer","missionsgenerated","flightcontroller","stationoperations","powerplay","searchrescue","stationMenu","shop","livery","socialspace","bartender","vistagenomics","pioneersupplies","apexinterstellar","frontlinesolutions","registeringcolonisation"],"StationEconomy":"$economy_Industrial;","StationEconomy_Localised":"Industrial","StationEconomies":[{"Name":"$economy_Industrial;","Name_Localised":"Industrial","Proportion":1.0}],"DistFromStarLS":232712.118768,"LandingPads":{"Small":17,"Medium":18,"Large":9}})
+        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:07:05Z", "event":"CommunityGoalTest", "CurrentGoals":[ { "CGID":818, "Title":"Support Winter's Forces in LP 855-34 ", "SystemName":"LP 855-34", "MarketName":"Rhea's Resilience", "Expiry":"2025-05-15T07:00:00Z", "IsComplete":False, "CurrentTotal":4392258, "PlayerContribution":0, "NumContributors":6424, "TopTier":{ "Name":"Tier 6", "Bonus":"" }, "TopRankSize":10, "PlayerInTopRank":False, "TierReached":"Tier 4", "PlayerPercentileBand":100, "Bonus":65000000 } ] })
+        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:05:27Z","event":"SupercruiseExitTest","Taxi":False,"Multicrew":False,"StarSystem":"Nihursaga","SystemAddress":2999791389027,"Body":"Hardwick Hub","BodyID":8,"BodyType":"Station"})
+        self.recent_journal.add_entry({"timestamp":"2025-05-09T21:03:58Z","event":"ShipTargetedTest","TargetLocked":True,"Ship":"independant_trader","Ship_Localised":"Keelback","ScanStage":0})
 
     def test_add_entry(self):
         """
@@ -225,14 +225,14 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
         self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
         self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
-        self.recent_journal.removeDonationMissionLogs()
+        #self.recent_journal.removeDonationMissionLogs()
         self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230370 })
         self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
         self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
         self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"MissionCompleted", "Faction":"Social Manamaya Democrats", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890051, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"Social Manamaya Democrats", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
         self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
         self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
-        self.recent_journal.removeDonationMissionLogs()
+        #self.recent_journal.removeDonationMissionLogs()
         self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
         self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
         self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
@@ -248,6 +248,38 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({ "timestamp":"2025-06-01T07:58:22Z", "event":"MaterialCollected", "Category":"Encoded", "Name":"shieldcyclerecordings", "Name_Localised":"Distorted Shield Cycle Recordings", "Count":3 })
         self.recent_journal.add_entry({ "timestamp":"2025-06-01T07:58:22Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":13, "TotalMerits":1231266 })
         self.assertTrue(self.recent_journal.isScan)
+
+    def test_isScan2(self):
+        """
+        Test the isScan property again.
+        """
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:28Z", "event":"ShipTargeted", "TargetLocked":False })
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:27Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"hauler", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Jan-Christian Bakkerud;", "PilotName_Localised":"Jan-Christian Bakkerud", "PilotRank":"Novice", "ShieldHealth":100.000000, "HullHealth":100.000000, "Faction":"United NLTT 13249 Resistance", "LegalStatus":"Clean" })
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:25Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"hauler", "ScanStage":2, "PilotName":"$npc_name_decorate:#name=Jan-Christian Bakkerud;", "PilotName_Localised":"Jan-Christian Bakkerud", "PilotRank":"Novice", "ShieldHealth":100.000000, "HullHealth":100.000000 })
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:28Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":11, "TotalMerits":1279403 })
+        self.assertTrue(self.recent_journal.isScan)
+
+    def test_isNotRivalPowerKill(self):
+        """
+        Test the isScan property again.
+        """
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:25Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"hauler", "ScanStage":2, "PilotName":"$npc_name_decorate:#name=Jan-Christian Bakkerud;", "PilotName_Localised":"Jan-Christian Bakkerud", "PilotRank":"Novice", "ShieldHealth":100.000000, "HullHealth":100.000000 })
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:27Z", "event":"ShipTargeted", "TargetLocked":True, "Ship":"hauler", "ScanStage":3, "PilotName":"$npc_name_decorate:#name=Jan-Christian Bakkerud;", "PilotName_Localised":"Jan-Christian Bakkerud", "PilotRank":"Novice", "ShieldHealth":100.000000, "HullHealth":100.000000, "Faction":"United NLTT 13249 Resistance", "LegalStatus":"Clean" })
+        self.recent_journal.add_entry({ "timestamp":"2025-08-23T21:42:28Z", "event":"ShipTargeted", "TargetLocked":False })
+        self.assertFalse(self.recent_journal.isRivalPowerKills)
+
+    """
+    def test_isNotRivalPowerKill2(self):
+        """
+        #Test the isScan property again.
+    """
+        self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:56Z', 'event': 'ShipTargeted', 'TargetLocked': True, 'Ship': 'hauler', 'ScanStage': 1, 'PilotName': '$npc_name_decorate:#name=Jan-Christian Bakkerud;', 'PilotName_Localised': 'Jan-Christian Bakkerud', 'PilotRank': 'Novice'})
+        self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:56Z', 'event': 'ShipTargeted', 'TargetLocked': True, 'Ship': 'hauler', 'ScanStage': 2, 'PilotName': '$npc_name_decorate:#name=Jan-Christian Bakkerud;', 'PilotName_Localised': 'Jan-Christian Bakkerud', 'PilotRank': 'Novice', 'ShieldHealth': 100.0, 'HullHealth': 100.0})
+        self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:56Z', 'event': 'ShipTargeted', 'TargetLocked': True, 'Ship': 'hauler', 'ScanStage': 3, 'PilotName': '$npc_name_decorate:#name=Jan-Christian Bakkerud;', 'PilotName_Localised': 'Jan-Christian Bakkerud', 'PilotRank': 'Novice', 'ShieldHealth': 100.0, 'HullHealth': 100.0, 'Faction': 'United NLTT 13249 Resistance', 'LegalStatus': 'Clean'})
+        self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:57Z', 'event': 'ShipTargeted', 'TargetLocked': False})
+        self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:57Z', 'event': 'PowerplayMerits', 'Power': 'Jerome Archer', 'MeritsGained': 11, 'TotalMerits': 1279403})
+        self.assertFalse(self.recent_journal.isRivalPowerKills)
+    """
 
 if __name__ == "__main__":
     unittest.main()
