@@ -33,6 +33,7 @@ Upload data	                    (Ody) Upload powerplay malware
 """
 
 import re
+from consts import rare_goods
 
 class RecentJournal:
 
@@ -41,25 +42,6 @@ class RecentJournal:
              "wingadd", "wingjoin", "winginvite", "wingleave", "wingremove", "wingcancel", "startup", "loadout", "shiplocker", "statistics", "music","carrierlocation",
              "hulldamage", "repairall", "repair", "refuelall", "fssdiscoveryscan", "fsssignaldiscovered", "navroute", "dockingrequested", "dockinggranted",
              "storedships", "shipyard", "crimevictim"}
-
-    rare_goods = {
-        "saxonwine", "rusanioldsmokey", "thrutiscream", "uzumokulowgwings", "damnacarapaces", "bastsnakegin", "terramaterbloodbores", "livehecateseaworms", "gerasiangueuzebeer", 
-        "chameleoncloth", "onionheadalphastrain", "wolffesh", "hipprotosquid", "momusbogspaniel", "taurichimes", "fujintea", "ethgrezeteabuds", "esusekucaviar", "zeesszeantgrubglue", 
-        "azcancriformula42", "witchhaulkobebeef", "eraninpearlwhisky", "pantaaprayersticks", "konggaale", "tiegfriessynthsilk", "voidextractcoffee", "vherculisbodyrub", "vegaslimweed", 
-        "honestypills", "haidenblackbrew", "nanomedicines", "bankiamphibiousleather", "chateaudeaegaeon", "aganipperush", "thehuttonmug", "centaurimegagin", "altairianskin", 
-        "cherbonesbloodcrystals", "jotunmookah", "gilyasignatureweapons", "indibourbon", "havasupaidreamcatcher", "buckyballbeermats", "hip10175bushmeat", "ochoengchillies", 
-        "ophiuchexinoartefacts", "mechucoshightea", "pavoniseargrubs", "crystallinespheres", "lyraeweed", "hiporganophosphates", "borasetanipathogenetics", "volkhabbeedrones", 
-        "wulpahyperboresystems", "motronaexperiencejelly", "lucanonionhead", "tanmarktranquiltea", "onionhead", "tarachspice", "masterchefs", "xihebiomorphiccompanions", "mulachigiantfungus", 
-        "tiolcewaste2pasteunits", "neritusberries", "chieridanimarinepaste", "ltthypersweet", "medbstarlube", "alyabodysoap", "galactictravelguide", "cromsilverfesh", "duradrives", 
-        "alacarakmoskinart", "rajukrumultistoves", "cetirabbits", "aepyornisegg", "ngunamodernantiques", "mokojingbeastfeast", "thewatersofshintara", "ultracompactprocessorprototypes", 
-        "kachiriginfilterleeches", "utgaroarmillennialeggs", "helvetitjpearls", "ceremonialheiketea", "vidavantianlace", "bakedgreebles", "harmasilversearum", "noneuclidianexotanks", 
-        "jaradharrepuzzlebox", "coquimspongiformvictuals", "onionheadbetastrain", "albinoquechuamammothmeat", "karetiicouture", "platinumalloy", "korokungpellets", "aroucaconventualsweets", 
-        "kamorinhistoricweapons", "belalansrayleather", "mukusubiichitinos", "cd75kittenbrandcoffee", "shanscharisorchid", "vanayequiceratomorphafur", "eleuthermals", "apavietii", 
-        "deuringastruffles", "hip118311swarm", "giantverrix", "azuremilk", "leestianeviljuice", "disomacorn", "uszaiantreegrub", "baltahsinevacuumkrill", "lavianbrandy", "orrerianviciousbrew",
-        "leatheryeggs", "anynacoffee", "deltaphoenicispalms", "personalgifts", "edenapplesofaerial", "hr7221wheat", "yasokondileaf", "holvaduellingblades", "anduligafireworks", "burnhambiledistillate", 
-        "kinagoviolins", "ngadandarifireopals", "rapabaosnakeskins", "toxandjivirocide", "kamitracigars", "wuthielokufroth", "sanumadecorativemeat", "geawendancedust", "jarouarice", "giantirukamasnails", 
-        "classifiedexperimentalequipment", "njangarisaddles", "soontillrelics", "gomanyauponcoffee", "karsukilocusts", "eshuumbrellas", "wheemetewheatcakes", "sothiscrystallinegold", 
-        "jaquesquinentianstill", "tianveganmeat", "sothiscrystallinegold", "sothiscrystallinesilver", "sothiscrystallinelithium"}
 
     salvage_types = {"occupiedcryopod", "damagedescapepod", "wreckagecomponents", "usscargoblackbox"}
 
@@ -242,8 +224,8 @@ class RecentJournal:
         #logger.debug(f"isRareGoods recent journal entries: {self.__journal_entries_log}")
         try:
             return (len(self.__journal_entries_log) > 2 and 
-                    ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in self.rare_goods)
-                        or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in self.rare_goods)
+                    ((self.__journal_entries_log[1].get("event", "") == "MarketSell" and self.__journal_entries_log[1].get("Type", "") in rare_goods)
+                        or (self.__journal_entries_log[2].get("event", "") == "MarketSell" and self.__journal_entries_log[2].get("Type", "") in rare_goods)
                     and self.__journal_entries_log[0].get("event", "").lower() == "powerplaymerits"))
         except IndexError as e:
             return False

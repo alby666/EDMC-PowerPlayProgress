@@ -6,6 +6,7 @@ It displays the progress in a progress bar and a label, and allows the user to c
 """
 from __future__ import annotations
 
+import asyncio
 import math
 import locale
 import re
@@ -18,6 +19,7 @@ from tkinter import ttk
 from consts import PLUGIN_NAME, mined_heading, plugin_version
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
+from rares import Rares
 from socials import Socials
 from systemprogress import SystemProgress
 from multiHyperlinkLabel import MultiHyperlinkLabel
@@ -78,6 +80,7 @@ class PowerPlayProgress:
         self.copy_button: tk.Button = tk.Button()
         self.reset_button_button: tk.Button = tk.Button()
         self.reset_session_button: tk.Button = tk.Button()
+        self.rares_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
         self.socials_link_discord: MultiHyperlinkLabel = MultiHyperlinkLabel()
         self.socials_link_reddit: MultiHyperlinkLabel = MultiHyperlinkLabel()
@@ -456,6 +459,52 @@ class PowerPlayProgress:
             #self.current_session = SessionProgress()
             self.starting_merits = self.total_merits
             self.Update_Ppp_Display()
+            
+    def show_nearest_rares_window(self) -> None:
+        """
+        Opens a window showing the 5 nearest rare goods to the given system.
+        """
+        # Get sorted rares
+        rares = Rares()
+        sorted_rares = asyncio.run(rares.distance_sorted_rares_async(self.current_system.position.x, self.current_system.position.y, self.current_system.position.z))[:5]  # Top 5
+
+        # Create window
+        win = tk.Toplevel()
+        win.title("Nearest Rare Commodities")
+
+        # Column headers
+        headers = ["Commodity", "System", "Station", "Max Pad Size", "Stock", "Distance (ly)"]
+        for col, header in enumerate(headers):
+            lbl = ttk.Label(win, text=header, font=("Arial", 10, "bold"))
+            lbl.grid(row=0, column=col, padx=5, pady=5, sticky="nsew")
+
+        size_mapping = {
+            1: "Small",
+            2: "Medium",
+            3: "Large"
+        }
+
+        # Data rows
+        for row, (commodity, export, distance) in enumerate(sorted_rares, start=1):
+            ttk.Label(win, text=commodity).grid(row=row, column=0, padx=5, pady=2)
+            system = getattr(export, "systemName", "")
+            MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(system), 
+                                popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', system)}", 
+                                text=f"{system}").grid(row=row, column=1, padx=5, pady=2)
+            #MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(getattr(export, "systemName", "")), 
+            #                    popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', getattr(export, 'systemName', ''))}", 
+            #                    text=getattr(export, 'systemName', '')).grid(row=row, column=1, padx=5, pady=2)
+            #ttk.Label(win, text=getattr(export, "systemName", "")).grid(row=row, column=1, padx=5, pady=2)
+            ttk.Label(win, text=getattr(export, "stationName", "")).grid(row=row, column=2, padx=5, pady=2)
+            # Convert to mapped value
+            mapped_size = size_mapping.get(getattr(export, "maxLandingPadSize", 0), "Unknown")  # Default to "Unknown" if not found
+            ttk.Label(win, text=mapped_size).grid(row=row, column=3, padx=5, pady=2)
+            ttk.Label(win, text=getattr(export, "stock", "")).grid(row=row, column=4, padx=5, pady=2)
+            ttk.Label(win, text=f"{distance:.2f}").grid(row=row, column=5, padx=5, pady=2)
+
+        # Make columns expand equally
+        for col in range(len(headers)):
+            win.grid_columnconfigure(col, weight=1)
 
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
@@ -567,6 +616,10 @@ class PowerPlayProgress:
             self.buttons_frame,
             text="Reset Session",
             command=self.reset_session_progress
+        self.rares_button = tk.Button(
+            self.buttons_frame, 
+            text="Nearest Rares", 
+            command=self.show_nearest_rares_window
         )
         current_row += 1
 
@@ -802,6 +855,7 @@ class PowerPlayProgress:
         self.copy_button.grid(row=cur_row, column=0, sticky="W", padx=2)
         self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=2)
         self.reset_session_button.grid(row=cur_row, column=2, sticky="W", padx=2)
+        self.rares_button.grid(row=cur_row, column=3, sticky="W", padx=2)
 
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)
