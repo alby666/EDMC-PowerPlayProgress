@@ -591,7 +591,7 @@ class PowerPlayProgress:
         # Get the system's default locale
         default_locale = locale.getlocale()
         # Set the locale to the system's default
-        locale.setlocale(locale.LC_ALL, default_locale[0])
+        locale.setlocale(locale.LC_ALL, '.'.join(default_locale))
 
         ## Update the progress bar and label with the current session data
         if self.options_view_progress_bar.get():
