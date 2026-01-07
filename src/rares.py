@@ -50,7 +50,7 @@ class Rares:
         """
         return commodity_name.lower() in self.rare_goods
 
-    def get_rares_data(self) -> dict:
+    def _get_rares_data(self) -> dict:
         """
         Retrieve export data for each rare commodity from the API, with caching.
         Returns a dictionary mapping commodity names to a list of RareExport instances.
@@ -115,7 +115,7 @@ class Rares:
         Returns a list of (commodity_name, RareExport, distance) tuples for all rare goods,
         ordered by distance from the given (x, y, z) coordinates (nearest first).
         """
-        rares_data = self.get_rares_data()
+        rares_data = self._get_rares_data()
         rare_distances = []
 
         for commodity, exports in rares_data.items():

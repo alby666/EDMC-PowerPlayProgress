@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import math
 import locale
+import threading
 import re
 import requests
 import platform
@@ -92,10 +93,38 @@ class PowerPlayProgress:
         self.merits_by_activty_frame: tk.Frame = tk.Frame()
         self.buttons_frame: tk.Frame = tk.Frame()
         self.socials_power_label: tk.Label = tk.Label()
-
+        self.sorted_rares = []
+        self.rares: Rares = Rares()
         self.flex_row = 7
         self.last_merits_gained = 0
+        self._rares_fetch_thread: threading.Thread | None = None
+
+        # Start a background thread to fetch sorted rares so plugin init isn't blocked
+        try:
+            self._rares_fetch_thread = threading.Thread(target=self._fetch_sorted_rares, daemon=True)
+            self._rares_fetch_thread.start()
+        except Exception as ex:
+            logger.exception("Failed to start rares fetch thread", exc_info=ex)
+
         logger.info("PowerPlayProgress instantiated")
+
+    def _fetch_sorted_rares(self) -> None:
+        """
+        Background worker to fetch sorted rares using the Rares async API.
+        Runs inside a separate thread and populates `self.sorted_rares` when complete.
+        """
+        try:
+            result = asyncio.run(self.rares.distance_sorted_rares_async(
+                self.current_system.position.x,
+                self.current_system.position.y,
+                self.current_system.position.z
+            ))
+            self.sorted_rares = result
+            logger.info("PowerPlayProgress - Fetched sorted rares (non-blocking)")
+            logger.debug("PowerPlayProgress - sorted_rares count: %d", len(self.sorted_rares))
+            
+        except Exception as ex:
+            logger.exception("Failed to fetch sorted rares", exc_info=ex)
 
     def on_load(self) -> str:
         """
@@ -464,9 +493,18 @@ class PowerPlayProgress:
         """
         Opens a window showing the 5 nearest rare goods to the given system.
         """
-        # Get sorted rares
-        rares = Rares()
-        sorted_rares = asyncio.run(rares.distance_sorted_rares_async(self.current_system.position.x, self.current_system.position.y, self.current_system.position.z))[:5]  # Top 5
+        # If rares are not yet available, inform the user and return
+        if not self.sorted_rares:
+            if getattr(self, "_rares_fetch_thread", None) and self._rares_fetch_thread.is_alive():
+                logger.debug("Nearest rares requested but fetch thread is still alive; informing user to wait")
+                messagebox.showinfo("Nearest Rares", "Nearest rares are still loading. Please try again shortly.")
+                return
+            else:
+                logger.debug("Nearest rares requested but no data available; informing user")
+                messagebox.showinfo("Nearest Rares", "No nearest rare data available.")
+                return
+
+        self.sorted_rares = self.rares.distance_sorted_rares(self.current_system.position.x, self.current_system.position.y, self.current_system.position.z)[:5]
 
         # Create window
         win = tk.Toplevel()
@@ -485,7 +523,7 @@ class PowerPlayProgress:
         }
 
         # Data rows
-        for row, (commodity, export, distance) in enumerate(sorted_rares, start=1):
+        for row, (commodity, export, distance) in enumerate(self.sorted_rares, start=1):
             ttk.Label(win, text=commodity).grid(row=row, column=0, padx=5, pady=2)
             system = getattr(export, "systemName", "")
             MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(system), 
@@ -616,6 +654,7 @@ class PowerPlayProgress:
             self.buttons_frame,
             text="Reset Session",
             command=self.reset_session_progress
+        )
         self.rares_button = tk.Button(
             self.buttons_frame, 
             text="Nearest Rares", 
