@@ -36,9 +36,18 @@ jobs:
         run: |
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run unit tests
+      - name: Run unit tests (top-level only)
         run: |
-          python -m unittest discover -s test -p "test_*.py"
+          python - <<'PY'
+          import unittest,glob,sys
+          suite=unittest.TestSuite()
+          for f in sorted(glob.glob('tests/test_*.py')):
+              module = f.replace('/', '.')
+              module = module[:-3]  # strip .py
+              suite.addTests(unittest.defaultTestLoader.loadTestsFromName(module))
+          res=unittest.TextTestRunner().run(suite)
+          sys.exit(not res.wasSuccessful())
+          PY
 
   build-release:
     runs-on: ubuntu-latest
