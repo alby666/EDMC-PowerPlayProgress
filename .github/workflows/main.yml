@@ -1,71 +1,102 @@
-name: Build and Compress Release
-
-permissions:
-  contents: write
-  issues: read
+name: Build Release
 
 on:
-  workflow_dispatch: # Enables manual triggering of this workflow
+  workflow_dispatch:
     inputs:
-      release_number: # Define input for the release version
-        description: "Release version (e.g., 1.0.0)"
+      release_number:
+        description: "Release version number (e.g. 1.4.2)"
         required: true
-        default: "1.0.0"
+        type: string
 
 jobs:
-  build-and-compress:
+  test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout main
         uses: actions/checkout@v4
-
-      - name: Replace Version in Python File
-        run: |
-          file="src/load.py"
-          version="${{ inputs.release_number }}"
-          sed -i "s/^plugin_version: str = '.*'/plugin_version: str = '${version}'/" $file
-          
-      - name: Fetch Closed Issues
-        id: fetch_issues
-        uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issues = await github.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'closed', // Fetch closed issues
-              per_page: 10, // Limit number of issues fetched
-              since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // Fetch issues closed in the last week              
-            });
+          ref: main
 
-            // Format issues as markdown list
-            const issueBody = issues.data.map(issue => `- [#${issue.number}](${issue.html_url}) ${issue.title}`).join('\n');
-            core.setOutput("issue_body", issueBody);
-
-      - name: Compress Files
-        run: zip -r EDMC-PowerPlayProgress.zip ./src -x ".git/*" ".github/*"
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          name: EDMC-PowerPlayProgress-zip
-          path: EDMC-PowerPlayProgress.zip
-          
-      - name: Create Tag
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git tag -a ${{ inputs.release_number }} -m "Release ${{ inputs.release_number }}"
-          git push origin ${{ inputs.release_number }}
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run unit tests
+        run: |
+          python -m unittest discover -s test -p "test_*.py"
+
+  build-release:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0   # Required for changelog generation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Update plugin_version in consts.py
+        run: |
+          sed -i "s/^plugin_version *= *.*/plugin_version = \"${{ github.event.inputs.release_number }}\"/" consts.py
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add consts.py
+          git commit -m "Bump version to ${{ github.event.inputs.release_number }}"
+          git push
+
+      - name: Install changelog generator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev
+          sudo gem install github_changelog_generator
+
+      - name: Generate CHANGELOG.md
+        env:
+          CHANGELOG_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          github_changelog_generator \
+            --user ${{ github.repository_owner }} \
+            --project ${{ github.event.repository.name }} \
+            --token ${{ secrets.GITHUB_TOKEN }} \
+            --future-release ${{ github.event.inputs.release_number }}
+
+      - name: Commit changelog
+        run: |
+          git add CHANGELOG.md
+          git commit -m "Update changelog for ${{ github.event.inputs.release_number }}"
+          git push
+
+      - name: Zip src folder
+        run: |
+          cd src
+          zip -r ../EDMC-PowerPlayProgress.zip .
 
       - name: Create Release
-        uses: actions/create-release@v1
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.release_number }}
-          release_name: Release ${{ inputs.release_number }}
-          body: ${{ steps.fetch_issues.outputs.issue_body }}
-          draft: false
-          prerelease: false
-
+          tag_name: ${{ github.event.inputs.release_number }}
+          name: Release ${{ github.event.inputs.release_number }}
+          generate_release_notes: true
+          files: EDMC-PowerPlayProgress.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
