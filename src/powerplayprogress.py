@@ -19,9 +19,11 @@ from consts import PLUGIN_NAME, mined_heading, plugin_version
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
+from rares import Rares
 from systemprogress import SystemProgress
 from multiHyperlinkLabel import MultiHyperlinkLabel
 from canvasprogressbar import CanvasProgressBar
+from PIL import Image, ImageOps
 
 import myNotebook as nb  # type: ignore # noqa: N813
 from config import appname, config # type: ignore # noqa: N813
@@ -78,6 +80,7 @@ class PowerPlayProgress:
         self.copy_button: tk.Button = tk.Button()
         self.reset_button_button: tk.Button = tk.Button()
         self.reset_session_button: tk.Button = tk.Button()
+        self.rares_button: tk.Button = tk.Button()
         self.recent_journal_log: RecentJournal = RecentJournal()
         self.socials_link_discord: MultiHyperlinkLabel = MultiHyperlinkLabel()
         self.socials_link_reddit: MultiHyperlinkLabel = MultiHyperlinkLabel()
@@ -92,6 +95,7 @@ class PowerPlayProgress:
 
         self.flex_row = 7
         self.last_merits_gained = 0
+        self.rares_window = None  # Track open rares window
         logger.info("PowerPlayProgress instantiated")
 
     def on_load(self) -> str:
@@ -442,6 +446,195 @@ class PowerPlayProgress:
             self.current_session.activities = SessionProgress.Activities()
             self.Update_Ppp_Display()
 
+    def show_nearest_rares_window(self) -> None:
+        """
+        Opens a window showing the 5 nearest rare goods to the given system.
+        """
+        # Check if window is already open
+        if self.rares_window is not None and self.rares_window.winfo_exists():
+            # Bring existing window to front
+            self.rares_window.lift()
+            self.rares_window.focus()
+            return
+        
+        # Get sorted rares
+        rares = Rares()
+        sorted_rares = rares.get_nearest_to(self.current_system.position.x, self.current_system.position.y, self.current_system.position.z)[:10]  # Top 10
+
+        # Create window
+        win = tk.Toplevel()
+        self.rares_window = win  # Store reference
+        win.title(f"Nearest Rare Commodities - {self.current_system.system}")
+        win.resizable(False, False)
+        win.overrideredirect(True)  # Hide the system title bar
+        
+        # Clear reference when window is destroyed
+        def on_window_close():
+            self.rares_window = None
+            win.destroy()
+        
+        win.protocol("WM_DELETE_WINDOW", on_window_close)
+        
+        # Position window offset from main EDMC window (multi-monitor aware)
+        try:
+            # Get main window dimensions and position
+            main_window = self.frame.winfo_toplevel()
+            main_x = main_window.winfo_x()
+            main_y = main_window.winfo_y()
+            main_width = main_window.winfo_width()
+            main_height = main_window.winfo_height()
+            
+            # Get virtual root dimensions (handles multi-monitor setups)
+            # These give the full desktop including all monitors
+            virt_x = main_window.winfo_vrootx()
+            virt_y = main_window.winfo_vrooty()
+            virt_width = main_window.winfo_vrootwidth()
+            virt_height = main_window.winfo_vrootheight()
+            
+            # Calculate screen bounds (handles negative coordinates for secondary monitors)
+            screen_left = virt_x
+            screen_right = virt_x + virt_width
+            screen_top = virt_y
+            screen_bottom = virt_y + virt_height
+            
+            # Default window size estimate
+            win_width = 650
+            win_height = 300
+            
+            # Calculate position: try right side first, then left
+            right_x = main_x + main_width + 10
+            if right_x + win_width <= screen_right:
+                # Room on the right
+                win_x = right_x
+            else:
+                # Put on the left
+                left_x = main_x - win_width - 10
+                if left_x >= screen_left:
+                    win_x = left_x
+                else:
+                    # Fallback: center on main window
+                    win_x = main_x + (main_width - win_width) // 2
+            
+            # Vertical position: align with top of main window, but keep on screen
+            win_y = max(screen_top, main_y)
+            if win_y + win_height > screen_bottom:
+                win_y = max(screen_top, screen_bottom - win_height)
+            
+            win.geometry(f"+{win_x}+{win_y}")
+        except Exception:
+            pass  # If positioning fails, use default
+        
+        # Apply styling to match main window
+        bg_color = self.frame.cget("bg")
+        # Get foreground color from an existing label in the frame
+        try:
+            fg_color = self.powerplay_level_label.cget("fg")
+        except:
+            fg_color = "black"  # Default fallback
+        win.configure(bg=bg_color)
+        
+        # Create custom title bar
+        title_bar = tk.Frame(win, bg=bg_color, height=30, cursor="fleur")
+        title_bar.grid(row=0, column=0, columnspan=7, sticky="ew", padx=0, pady=0)
+        title_bar.grid_propagate(False)
+        title_bar.columnconfigure(0, weight=1)
+        
+        # Variables for window dragging
+        drag_data = {"x": 0, "y": 0}
+        
+        def start_drag(event):
+            drag_data["x"] = event.x_root - win.winfo_x()
+            drag_data["y"] = event.y_root - win.winfo_y()
+        
+        def drag_window(event):
+            x = event.x_root - drag_data["x"]
+            y = event.y_root - drag_data["y"]
+            win.geometry(f"+{x}+{y}")
+        
+        # Title label
+        title_fg_color = fg_color if config.get_int('theme') == 0 else "white"
+        title_lbl = tk.Label(title_bar, text=f"Nearest Rare Commodities - {self.current_system.system}", bg=bg_color, fg=title_fg_color, font=("Arial", 8), cursor="fleur", anchor=tk.W)
+        title_lbl.pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=True)
+        theme.register(title_lbl)
+        
+        # Bind drag events to title bar and title label
+        title_bar.bind("<Button-1>", start_drag)
+        title_bar.bind("<B1-Motion>", drag_window)
+        title_lbl.bind("<Button-1>", start_drag)
+        title_lbl.bind("<B1-Motion>", drag_window)
+                        
+        # Close button
+        close_btn = tk.Label(title_bar, text="X", bg=bg_color, fg=fg_color, cursor="hand2", font=("Arial", 10, "bold"))
+        close_btn.pack(side=tk.RIGHT, padx=2)
+        close_btn.bind("<Button-1>", lambda e: win.destroy())
+        theme.register(close_btn)
+                
+        # Column headers (now at row 1)
+        headers = ["Commodity", "System", "Station", "Max Pad Size", "Stock", "Distance (ly)"]
+        for col, header in enumerate(headers):
+            lbl = tk.Label(win, text=header, font=("Arial", 10, "bold"), bg=bg_color, fg=fg_color)
+            lbl.grid(row=1, column=col if col <= 1 else col + 1, padx=5, pady=5, sticky="nsew")
+            theme.register(lbl)
+
+        size_mapping = {
+            1: "Small",
+            2: "Medium",
+            3: "Large"
+        }
+
+        # Create copy icon from base64 PNG
+        import base64
+        import io
+
+        png_b64 = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAYAAACEYr13AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsAAAA7AAWrWiQkAAAGHaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8P3hwYWNrZXQgYmVnaW49J++7vycgaWQ9J1c1TTBNcENlaGlIenJlU3pOVGN6a2M5ZCc/Pg0KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyI+PHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj48cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0idXVpZDpmYWY1YmRkNS1iYTNkLTExZGEtYWQzMS1kMzNkNzUxODJmMWIiIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj48dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPjwvcmRmOkRlc2NyaXB0aW9uPjwvcmRmOlJERj48L3g6eG1wbWV0YT4NCjw/eHBhY2tldCBlbmQ9J3cnPz4slJgLAAACOklEQVQ4T52Tv08TYRjHP+9xR3uFBRIwGJyIIw6VssiEKSAbMqkDLICDOqiLhAkTGTH4B1igLhJ/LhgGurQRBiILQWTBiQNqArZ31/tRzuEC3tU2Gj/Tvd/v83zf9543r0inF71Py8uosRh/w9B1RkZHSSb7zjVx5/Yt7+Gjx7S0tOB5HkKIUNMZQghyuRxra5+ZnX3+2xgfH/NOTk68f2Fz84s3OfkkpMkAtm0DkMlkeJVeRI2pQPgkAsj/yKNpGg/u38MwTW4MDCAHiz5+eE9XIkF3dzeeF3R8ZFmmvl7BMEzy+TwL86lwQFSNkkgkiMevBuWqFAoF3r19Ew4AOD09xTRNZmae4dg2Ul1dyNd1neHhYeLxLoDqAbIs03Oth3K5jJDCs7Btm/b2S7iuA9UCXNdFURT6+vsrrRAHBxpUC1AUBcuySKVe4joOkiSFfNMs0Xu9l46OywCE3f/gjxM4jkMkEmFi4m6lFaLmL8iyjOM4ZFZXaw6xs/MKzc3Nfn3IBSRJwnVdsrlszWtsamqitfUCnAWoquovZBnLslBVlenpp6HGSg4PDwCQCoWfZLNZNjY20DSNSCRCuVxmZ+cr29vbbG1tsb+/X9mPEP785aGhmywtvUaNRtn9tktjYyOlUokXc3NYloVZKpFMJhkZGa3M8Ak+zampSW99fS0o1eT4+NibGB/zn/MZxWKR73t7tLVdDMrgb3T+LYTg6OgIXS8ivICzsrLCwnyKWEPDeXEtDMNgcHCQX5wiS4oqTftoAAAAAElFTkSuQmCC"
+
+        png_data = base64.b64decode(png_b64)
+        pil_image = Image.open(io.BytesIO(png_data))
+        
+        # Convert PIL Image to PhotoImage via PPM format
+        ppm_buffer = io.BytesIO()
+        pil_image.save(ppm_buffer, format='PPM')
+        copy_icon = tk.PhotoImage(data=ppm_buffer.getvalue())
+
+        # Data rows (starting at row 2)
+        for row, rare in enumerate(sorted_rares, start=2):
+            # Calculate distance from current system position
+            dx = rare.coordinates.x - self.current_system.position.x
+            dy = rare.coordinates.y - self.current_system.position.y
+            dz = rare.coordinates.z - self.current_system.position.z
+            distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+            
+            tk.Label(win, text=rare.name, bg=bg_color, fg=fg_color).grid(row=row, column=0, padx=5, pady=2)
+            MultiHyperlinkLabel(win, compound=tk.RIGHT, url=self.system_url(rare.system), 
+                    popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', rare.system)}", 
+                    text=f"{rare.system}", background=bg_color, foreground="blue" if config.get_int('theme') == 0 else "white").grid(row=row, column=1, padx=5, pady=2)
+            
+            # Copy button for system name (after System column)
+            def make_copy_handler(system_name):
+                def copy_system():
+                    win.clipboard_clear()
+                    win.clipboard_append(system_name)
+                    win.update()
+                return copy_system
+            
+            copy_btn = tk.Label(win, image=copy_icon, bg=bg_color, cursor="hand2")
+            copy_btn.image = copy_icon  # Keep a reference to prevent garbage collection
+            copy_btn.grid(row=row, column=2, padx=5, pady=2)
+            copy_btn.bind("<Button-1>", lambda e, handler=make_copy_handler(rare.system): handler())
+            theme.register(copy_btn)
+            
+            tk.Label(win, text=rare.stationName, bg=bg_color, fg=fg_color).grid(row=row, column=3, padx=5, pady=2)
+            tk.Label(win, text=size_mapping.get(rare.maxLandingPadSize), bg=bg_color, fg=fg_color).grid(row=row, column=4, padx=5, pady=2)
+            tk.Label(win, text=str(rare.count or "-"), bg=bg_color, fg=fg_color).grid(row=row, column=5, padx=5, pady=2)
+            tk.Label(win, text=f"{distance:.2f}", bg=bg_color, fg=fg_color).grid(row=row, column=6, padx=5, pady=2)
+
+        # Make columns expand equally
+        for col in range(len(headers)):
+            win.grid_columnconfigure(col, weight=1)
+
+        #theme.apply(win)
+
+
     def reset_session_progress(self) -> None:
         """
         Reset the progress of the current session except for total merits.
@@ -567,6 +760,11 @@ class PowerPlayProgress:
             self.buttons_frame,
             text="Reset Session",
             command=self.reset_session_progress
+        )
+        self.rares_button = tk.Button(
+            self.buttons_frame, 
+            text="Rares", 
+            command=self.show_nearest_rares_window
         )
         current_row += 1
 
@@ -802,6 +1000,7 @@ class PowerPlayProgress:
         self.copy_button.grid(row=cur_row, column=0, sticky="W", padx=2)
         self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=2)
         self.reset_session_button.grid(row=cur_row, column=2, sticky="W", padx=2)
+        self.rares_button.grid(row=cur_row, column=3, sticky="W", padx=2)
 
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)

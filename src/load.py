@@ -173,24 +173,30 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                         sys.power_play_state_undermining = entry["PowerplayStateUndermining"]
                     found = True
                     break
+
+            ppp.current_system = SystemProgress()
+            ppp.current_system.system = system
+            #ppp.current_system.earnings = 0
+            ppp.current_system.controlling_power = entry.get("ControllingPower", "")
+            ppp.current_system.power_play_state = entry.get("PowerplayState", "")
+            ppp.current_system.power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
+            ppp.current_system.power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
+            ppp.current_system.power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
+            ppp.current_system.orig_power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
+            ppp.current_system.orig_power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
+            ppp.current_system.orig_power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
+            ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
+            ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
+            ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
             #If its a new system and it has a controlling power otherwise there is no power play to track
             if (not found) and (entry.get("ControllingPower", "") != ""):
-                ppp.current_system = SystemProgress()
-                ppp.current_system.system = system
-                ppp.current_system.earnings = 0
-                ppp.current_system.controlling_power = entry.get("ControllingPower", "")
-                ppp.current_system.power_play_state = entry.get("PowerplayState", "")
-                ppp.current_system.power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
-                ppp.current_system.power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
-                ppp.current_system.power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
-                ppp.current_system.orig_power_play_state_control_progress = entry.get("PowerplayStateControlProgress", 0)
-                ppp.current_system.orig_power_play_state_reinforcement = entry.get("PowerplayStateReinforcement", 0)
-                ppp.current_system.orig_power_play_state_undermining = entry.get("PowerplayStateUndermining", 0)
-                ppp.current_system.position.x = state.get("StarPos", [0, 0, 0])[0]
-                ppp.current_system.position.y = state.get("StarPos", [0, 0, 0])[1]
-                ppp.current_system.position.z = state.get("StarPos", [0, 0, 0])[2]
                 ppp.systems.append(ppp.current_system)
             
+            if ppp.rares_window is not None:
+                ppp.rares_window.destroy()
+                ppp.rares_window = None
+                ppp.show_nearest_rares_window()
+
         case 'died' | 'docked':
             """"
             Update the current sessiona dn start a new one.

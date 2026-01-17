@@ -17,6 +17,10 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
   * Count per Power data
   * Count delivered by system
 * Ability to reset the progress counters
+* NEW FEATURE: Locate the nearest rare commodities to your current system
+
+    <img src="screen_shot_nearest_rares_light.png" width="500" height="300"> <img src="screen_shot_nearest_rares_dark.png" width="500" height="300">
+
 * Merits by Activity - rival power kills tracking & better ship scanning
 
     <img src="screen_shot_by_activities.png">
@@ -80,6 +84,7 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
 * Reset - resets the current progress counters (except for the overall session total)
 * Reset Session - resets the Total Merits this session (helpful for clearing duplicate errors)
+* Rares - display the nearest 10 rare commidities to your current system
 
 ## Requirements
 * [EDMC] version 5.12 and above (python 3.11)
