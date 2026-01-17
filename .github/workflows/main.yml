@@ -34,6 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd src
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run unit tests (top-level only)

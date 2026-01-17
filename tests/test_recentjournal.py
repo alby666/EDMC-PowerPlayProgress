@@ -19,7 +19,7 @@ class TestRecentJournal(unittest.TestCase):
         """
         entry = {"event": "PowerplayMerits", "MeritsGained": 10}
         self.recent_journal.add_entry(entry)
-        self.assertEqual(len(self.recent_journal._RecentJournal__journal_entries_log), 4)
+        self.assertEqual(len(self.recent_journal._RecentJournal__journal_entries_log), 5)
         self.assertEqual(self.recent_journal._RecentJournal__journal_entries_log[0], entry)
 
     def test_is_on_foot(self):
