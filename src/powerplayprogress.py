@@ -881,7 +881,7 @@ class PowerPlayProgress:
             display_row = 0
             
             # Column headers
-            headers = ["System/Commodity", "Station", "Buy Price", "Sell Price", 
+            headers = ["Commodity", "Station", "Buy Price", "Sell Price", 
                       "Profit/t", "Margin %", "Stock", "Pad Size"]
             for col, header in enumerate(headers):
                 lbl = tk.Label(routes_frame, text=header, font=("Arial", 9, "bold"), 

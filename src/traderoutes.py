@@ -50,6 +50,9 @@ class TradeRoutes:
     MIN_PROFIT_MARGIN = 0.40  # 40% profit margin
     MAX_UNDERMINING_PRICE = 500  # Credits per ton
     
+    # Station types considered planetary/surface ports
+    PLANETARY_STATION_TYPES = ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+    
     def __init__(self):
         """Initialize the trade routes manager."""
         self.timeout = 10  # API request timeout in seconds
@@ -151,7 +154,7 @@ class TradeRoutes:
                     
                     # Determine if station is planetary
                     station_type = item.get("stationType", "")
-                    is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                    is_planetary = station_type in self.PLANETARY_STATION_TYPES
                     
                     route = TradeRoute(
                         system_name=item.get("systemName", system_name),
@@ -249,7 +252,7 @@ class TradeRoutes:
                         
                         # Determine if station is planetary
                         station_type = import_item.get("stationType", "")
-                        is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                        is_planetary = station_type in self.PLANETARY_STATION_TYPES
                         
                         route = TradeRoute(
                             system_name=import_item.get("systemName", dest_system),
@@ -322,7 +325,7 @@ class TradeRoutes:
                 
                 # Determine if station is planetary
                 station_type = item.get("stationType", "")
-                is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                is_planetary = station_type in self.PLANETARY_STATION_TYPES
                 
                 route = TradeRoute(
                     system_name=item.get("systemName", system_name),
