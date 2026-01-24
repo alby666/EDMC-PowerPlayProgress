@@ -85,6 +85,18 @@ class TradeRoutes:
             return 0.0
         return (sell_price - buy_price) / buy_price
     
+    def _meets_stock_requirement(self, stock: int, min_stock: int) -> bool:
+        """Check if stock meets minimum requirement.
+        
+        Args:
+            stock: Available stock quantity
+            min_stock: Minimum required stock
+            
+        Returns:
+            True if stock >= min_stock, False otherwise
+        """
+        return stock >= min_stock
+    
     def get_reinforcement_routes(self, system_name: str, current_x: float, current_y: float, 
                                   current_z: float, max_results: int = 5, min_stock: int = 1) -> list[TradeRoute]:
         """Get reinforcement trade routes for a system.
@@ -127,7 +139,7 @@ class TradeRoutes:
                 profit_margin = self._calculate_profit_margin(buy_price, sell_price)
                 stock = item.get("stock", 0)
                 
-                if profit_margin >= self.MIN_PROFIT_MARGIN and stock >= min_stock:
+                if profit_margin >= self.MIN_PROFIT_MARGIN and self._meets_stock_requirement(stock, min_stock):
                     # Calculate distance
                     station_coords = item.get("coordinates", {})
                     dx = station_coords.get("x", current_x) - current_x
@@ -219,7 +231,7 @@ class TradeRoutes:
                     profit_margin = self._calculate_profit_margin(buy_price, sell_price)
                     stock = export_item.get("stock", 0)
                     
-                    if profit_margin >= self.MIN_PROFIT_MARGIN and stock >= min_stock:
+                    if profit_margin >= self.MIN_PROFIT_MARGIN and self._meets_stock_requirement(stock, min_stock):
                         # Calculate distance
                         station_coords = import_item.get("coordinates", {})
                         dx = station_coords.get("x", current_x) - current_x
@@ -286,7 +298,7 @@ class TradeRoutes:
             stock = item.get("stock", 0)
             
             # For undermining, we want cheap commodities to flood the market
-            if sell_price > 0 and sell_price < self.MAX_UNDERMINING_PRICE and stock >= min_stock:
+            if sell_price > 0 and sell_price < self.MAX_UNDERMINING_PRICE and self._meets_stock_requirement(stock, min_stock):
                 # Calculate distance
                 station_coords = item.get("coordinates", {})
                 dx = station_coords.get("x", current_x) - current_x
