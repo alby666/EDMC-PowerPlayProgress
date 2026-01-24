@@ -27,6 +27,8 @@ class TradeRoute:
     market_id: Optional[int] = None
     max_landing_pad_size: Optional[str] = None
     updated_at: Optional[str] = None
+    station_type: Optional[str] = None  # Added for filtering surface ports
+    is_planetary: bool = False  # Added for surface port filtering
 
     def get_profit_per_ton(self) -> int:
         """Calculate profit per ton."""
@@ -147,6 +149,10 @@ class TradeRoutes:
                     dz = station_coords.get("z", current_z) - current_z
                     distance = math.sqrt(dx * dx + dy * dy + dz * dz)
                     
+                    # Determine if station is planetary
+                    station_type = item.get("stationType", "")
+                    is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                    
                     route = TradeRoute(
                         system_name=item.get("systemName", system_name),
                         station_name=item.get("stationName", "Unknown"),
@@ -159,12 +165,14 @@ class TradeRoutes:
                         distance_ly=distance,
                         market_id=item.get("marketId"),
                         max_landing_pad_size=self._convert_pad_size(item.get("maxLandingPadSize")),
-                        updated_at=item.get("updatedAt")
+                        updated_at=item.get("updatedAt"),
+                        station_type=station_type,
+                        is_planetary=is_planetary
                     )
                     routes.append(route)
         
-        # Sort by profit margin descending and limit results
-        routes.sort(key=lambda r: r.profit_margin, reverse=True)
+        # Sort by distance (nearest first), then by system name, then by profit margin descending
+        routes.sort(key=lambda r: (r.distance_ly, r.system_name, -r.profit_margin))
         return routes[:max_results]
     
     def get_acquisition_routes(self, source_system: str, dest_system: str, 
@@ -239,6 +247,10 @@ class TradeRoutes:
                         dz = station_coords.get("z", current_z) - current_z
                         distance = math.sqrt(dx * dx + dy * dy + dz * dz)
                         
+                        # Determine if station is planetary
+                        station_type = import_item.get("stationType", "")
+                        is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                        
                         route = TradeRoute(
                             system_name=import_item.get("systemName", dest_system),
                             station_name=import_item.get("stationName", "Unknown"),
@@ -251,12 +263,14 @@ class TradeRoutes:
                             distance_ly=distance,
                             market_id=import_item.get("marketId"),
                             max_landing_pad_size=self._convert_pad_size(import_item.get("maxLandingPadSize")),
-                            updated_at=import_item.get("updatedAt")
+                            updated_at=import_item.get("updatedAt"),
+                            station_type=station_type,
+                            is_planetary=is_planetary
                         )
                         routes.append(route)
         
-        # Sort by profit margin descending and limit results
-        routes.sort(key=lambda r: r.profit_margin, reverse=True)
+        # Sort by distance (nearest first), then by system name, then by profit margin descending
+        routes.sort(key=lambda r: (r.distance_ly, r.system_name, -r.profit_margin))
         return routes[:max_results]
     
     def get_undermining_routes(self, system_name: str, current_x: float, current_y: float,
@@ -306,6 +320,10 @@ class TradeRoutes:
                 dz = station_coords.get("z", current_z) - current_z
                 distance = math.sqrt(dx * dx + dy * dy + dz * dz)
                 
+                # Determine if station is planetary
+                station_type = item.get("stationType", "")
+                is_planetary = station_type in ["Planet Port", "Planetary Outpost", "Planetary Settlement"]
+                
                 route = TradeRoute(
                     system_name=item.get("systemName", system_name),
                     station_name=item.get("stationName", "Unknown"),
@@ -318,12 +336,14 @@ class TradeRoutes:
                     distance_ly=distance,
                     market_id=item.get("marketId"),
                     max_landing_pad_size=self._convert_pad_size(item.get("maxLandingPadSize")),
-                    updated_at=item.get("updatedAt")
+                    updated_at=item.get("updatedAt"),
+                    station_type=station_type,
+                    is_planetary=is_planetary
                 )
                 routes.append(route)
         
-        # Sort by sell price ascending (cheapest first) and limit results
-        routes.sort(key=lambda r: r.sell_price)
+        # Sort by distance (nearest first), then by system name, then by sell price ascending (cheapest first)
+        routes.sort(key=lambda r: (r.distance_ly, r.system_name, r.sell_price))
         return routes[:max_results]
     
     def _convert_pad_size(self, pad_size: Optional[int]) -> Optional[str]:

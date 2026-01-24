@@ -60,6 +60,7 @@ class PowerPlayProgress:
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
         self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
         self.trade_routes_min_stock = tk.IntVar(value=config.get_int('trade_routes_min_stock', default=50))
+        self.trade_routes_include_surface = tk.BooleanVar(value=bool(config.get_bool('trade_routes_include_surface', default=True)))
 
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -250,6 +251,7 @@ class PowerPlayProgress:
         config.set('options_view_socials', bool(self.options_view_socials.get()))
         config.set('options_custom_format', str(self.options_custom_format.get()))
         config.set('trade_routes_min_stock', int(self.trade_routes_min_stock.get()))
+        config.set('trade_routes_include_surface', bool(self.trade_routes_include_surface.get()))
         
         if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
@@ -790,6 +792,9 @@ class PowerPlayProgress:
         # Min stock entry (uses the stored config value)
         min_stock_var = tk.IntVar(value=self.trade_routes_min_stock.get())
         
+        # Surface ports checkbox (uses the stored config value)
+        include_surface_var = tk.BooleanVar(value=self.trade_routes_include_surface.get())
+        
         def save_min_stock():
             """Save the min stock setting when changed."""
             try:
@@ -800,6 +805,13 @@ class PowerPlayProgress:
             except (ValueError, tk.TclError):
                 # Invalid input, reset to previous value
                 min_stock_var.set(self.trade_routes_min_stock.get())
+        
+        def save_surface_filter():
+            """Save the surface port filter setting when changed."""
+            new_value = include_surface_var.get()
+            self.trade_routes_include_surface.set(new_value)
+            config.set('trade_routes_include_surface', new_value)
+            update_routes()  # Refresh routes with new filter
         
         def update_routes():
             """Update the displayed routes based on selected mode."""
@@ -822,6 +834,9 @@ class PowerPlayProgress:
             
             # Get min stock value
             min_stock = min_stock_var.get()
+            
+            # Get surface port filter
+            include_surface = include_surface_var.get()
             
             try:
                 if selected_mode == TradeRoutes.REINFORCEMENT:
@@ -849,6 +864,10 @@ class PowerPlayProgress:
             # Clear loading message
             loading_lbl.destroy()
             
+            # Filter routes based on surface port setting
+            if not include_surface:
+                routes = [r for r in routes if not r.is_planetary]
+            
             if not routes:
                 no_data_lbl = tk.Label(routes_frame, 
                                       text="No trade routes available or API unavailable.", 
@@ -857,46 +876,65 @@ class PowerPlayProgress:
                 theme.register(no_data_lbl)
                 return
             
+            # Group routes by system and display with system headers
+            current_system_name = None
+            display_row = 0
+            
             # Column headers
-            headers = ["Commodity", "Station", "Buy Price", "Sell Price", 
+            headers = ["System/Commodity", "Station", "Buy Price", "Sell Price", 
                       "Profit/t", "Margin %", "Stock", "Pad Size"]
             for col, header in enumerate(headers):
                 lbl = tk.Label(routes_frame, text=header, font=("Arial", 9, "bold"), 
                              bg=bg_color, fg=fg_color)
-                lbl.grid(row=0, column=col, padx=3, pady=3, sticky="nsew")
+                lbl.grid(row=display_row, column=col, padx=3, pady=3, sticky="nsew")
                 theme.register(lbl)
+            display_row += 1
             
-            # Display routes
-            for row, route in enumerate(routes, start=1):
-                tk.Label(routes_frame, text=route.commodity_name, bg=bg_color, fg=fg_color, 
-                        font=("Arial", 9)).grid(row=row, column=0, padx=3, pady=2, sticky="w")
+            # Display routes grouped by system
+            for route in routes:
+                # Add system header if this is a new system
+                if route.system_name != current_system_name:
+                    current_system_name = route.system_name
+                    system_lbl = tk.Label(routes_frame, 
+                                         text=f"System: {route.system_name} ({route.distance_ly:.2f} ly)", 
+                                         bg=bg_color, fg=fg_color, 
+                                         font=("Arial", 9, "bold", "underline"))
+                    system_lbl.grid(row=display_row, column=0, columnspan=8, padx=3, pady=(8, 2), sticky="w")
+                    theme.register(system_lbl)
+                    display_row += 1
+                
+                # Display commodity row with indentation
+                tk.Label(routes_frame, text=f"  {route.commodity_name}", bg=bg_color, fg=fg_color, 
+                        font=("Arial", 9)).grid(row=display_row, column=0, padx=3, pady=2, sticky="w")
                 tk.Label(routes_frame, text=route.station_name, bg=bg_color, fg=fg_color,
-                        font=("Arial", 9)).grid(row=row, column=1, padx=3, pady=2, sticky="w")
+                        font=("Arial", 9)).grid(row=display_row, column=1, padx=3, pady=2, sticky="w")
                 tk.Label(routes_frame, text=f"{route.buy_price:,}", bg=bg_color, fg=fg_color,
-                        font=("Arial", 9)).grid(row=row, column=2, padx=3, pady=2, sticky="e")
+                        font=("Arial", 9)).grid(row=display_row, column=2, padx=3, pady=2, sticky="e")
                 tk.Label(routes_frame, text=f"{route.sell_price:,}", bg=bg_color, fg=fg_color,
-                        font=("Arial", 9)).grid(row=row, column=3, padx=3, pady=2, sticky="e")
+                        font=("Arial", 9)).grid(row=display_row, column=3, padx=3, pady=2, sticky="e")
                 
                 profit = route.get_profit_per_ton()
                 tk.Label(routes_frame, text=f"{profit:,}", bg=bg_color, fg=fg_color,
-                        font=("Arial", 9)).grid(row=row, column=4, padx=3, pady=2, sticky="e")
+                        font=("Arial", 9)).grid(row=display_row, column=4, padx=3, pady=2, sticky="e")
                 
                 if selected_mode != TradeRoutes.UNDERMINING:
                     margin_pct = route.profit_margin * 100
                     tk.Label(routes_frame, text=f"{margin_pct:.1f}%", bg=bg_color, fg=fg_color,
-                            font=("Arial", 9)).grid(row=row, column=5, padx=3, pady=2, sticky="e")
+                            font=("Arial", 9)).grid(row=display_row, column=5, padx=3, pady=2, sticky="e")
                 else:
                     tk.Label(routes_frame, text="-", bg=bg_color, fg=fg_color,
-                            font=("Arial", 9)).grid(row=row, column=5, padx=3, pady=2, sticky="e")
+                            font=("Arial", 9)).grid(row=display_row, column=5, padx=3, pady=2, sticky="e")
                 
                 tk.Label(routes_frame, text=f"{route.stock:,}" if route.stock else "-", 
-                        bg=bg_color, fg=fg_color, font=("Arial", 9)).grid(row=row, column=6, padx=3, pady=2, sticky="e")
+                        bg=bg_color, fg=fg_color, font=("Arial", 9)).grid(row=display_row, column=6, padx=3, pady=2, sticky="e")
                 tk.Label(routes_frame, text=route.max_landing_pad_size or "-", bg=bg_color, fg=fg_color,
-                        font=("Arial", 9)).grid(row=row, column=7, padx=3, pady=2, sticky="w")
+                        font=("Arial", 9)).grid(row=display_row, column=7, padx=3, pady=2, sticky="w")
                 
                 # Register all labels with theme
-                for widget in routes_frame.grid_slaves(row=row):
+                for widget in routes_frame.grid_slaves(row=display_row):
                     theme.register(widget)
+                
+                display_row += 1
         
         # Mode buttons
         tk.Label(mode_frame, text="Mode:", bg=bg_color, fg=fg_color, font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=5)
@@ -925,6 +963,14 @@ class PowerPlayProgress:
         min_stock_entry.bind("<Return>", lambda e: save_min_stock())
         min_stock_entry.bind("<FocusOut>", lambda e: save_min_stock())
         theme.register(min_stock_entry)
+        
+        # Surface ports checkbox
+        surface_checkbox = tk.Checkbutton(mode_frame, text="Include Surface Ports", 
+                                         variable=include_surface_var, command=save_surface_filter,
+                                         bg=bg_color, fg=fg_color, selectcolor=bg_color,
+                                         font=("Arial", 9))
+        surface_checkbox.pack(side=tk.LEFT, padx=(15, 5))
+        theme.register(surface_checkbox)
         
         # Note: Acquisition mode would need additional UI for source system selection
         # acquisition_btn = tk.Radiobutton(mode_frame, text="Acquisition", 
