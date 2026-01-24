@@ -86,7 +86,7 @@ class TradeRoutes:
         return (sell_price - buy_price) / buy_price
     
     def get_reinforcement_routes(self, system_name: str, current_x: float, current_y: float, 
-                                  current_z: float, max_results: int = 5) -> list[TradeRoute]:
+                                  current_z: float, max_results: int = 5, min_stock: int = 1) -> list[TradeRoute]:
         """Get reinforcement trade routes for a system.
         
         Reinforcement trades are in systems already controlled by your power.
@@ -98,6 +98,7 @@ class TradeRoutes:
             current_y: Current system Y coordinate
             current_z: Current system Z coordinate
             max_results: Maximum number of results to return
+            min_stock: Minimum stock level to filter by
             
         Returns:
             List of TradeRoute objects
@@ -124,8 +125,9 @@ class TradeRoutes:
             
             if buy_price > 0:
                 profit_margin = self._calculate_profit_margin(buy_price, sell_price)
+                stock = item.get("stock", 0)
                 
-                if profit_margin >= self.MIN_PROFIT_MARGIN:
+                if profit_margin >= self.MIN_PROFIT_MARGIN and stock >= min_stock:
                     # Calculate distance
                     station_coords = item.get("coordinates", {})
                     dx = station_coords.get("x", current_x) - current_x
@@ -139,7 +141,7 @@ class TradeRoutes:
                         commodity_name=item.get("commodityName", "Unknown"),
                         buy_price=buy_price,
                         sell_price=sell_price,
-                        stock=item.get("stock", 0),
+                        stock=stock,
                         demand=item.get("demand", 0),
                         profit_margin=profit_margin,
                         distance_ly=distance,
@@ -155,7 +157,7 @@ class TradeRoutes:
     
     def get_acquisition_routes(self, source_system: str, dest_system: str, 
                                current_x: float, current_y: float, current_z: float,
-                               max_results: int = 5) -> list[TradeRoute]:
+                               max_results: int = 5, min_stock: int = 1) -> list[TradeRoute]:
         """Get acquisition trade routes.
         
         Acquisition trades are from fortified/stronghold systems to systems
@@ -168,6 +170,7 @@ class TradeRoutes:
             current_y: Current system Y coordinate
             current_z: Current system Z coordinate
             max_results: Maximum number of results to return
+            min_stock: Minimum stock level to filter by
             
         Returns:
             List of TradeRoute objects
@@ -214,8 +217,9 @@ class TradeRoutes:
                 
                 if buy_price > 0:
                     profit_margin = self._calculate_profit_margin(buy_price, sell_price)
+                    stock = export_item.get("stock", 0)
                     
-                    if profit_margin >= self.MIN_PROFIT_MARGIN:
+                    if profit_margin >= self.MIN_PROFIT_MARGIN and stock >= min_stock:
                         # Calculate distance
                         station_coords = import_item.get("coordinates", {})
                         dx = station_coords.get("x", current_x) - current_x
@@ -229,7 +233,7 @@ class TradeRoutes:
                             commodity_name=commodity_name,
                             buy_price=buy_price,
                             sell_price=sell_price,
-                            stock=export_item.get("stock", 0),
+                            stock=stock,
                             demand=import_item.get("demand", 0),
                             profit_margin=profit_margin,
                             distance_ly=distance,
@@ -244,7 +248,7 @@ class TradeRoutes:
         return routes[:max_results]
     
     def get_undermining_routes(self, system_name: str, current_x: float, current_y: float,
-                               current_z: float, max_results: int = 5) -> list[TradeRoute]:
+                               current_z: float, max_results: int = 5, min_stock: int = 1) -> list[TradeRoute]:
         """Get undermining trade routes.
         
         Undermining trades are cheap commodities (< 500 cr/ton) sold to
@@ -256,6 +260,7 @@ class TradeRoutes:
             current_y: Current system Y coordinate
             current_z: Current system Z coordinate
             max_results: Maximum number of results to return
+            min_stock: Minimum stock level to filter by
             
         Returns:
             List of TradeRoute objects
@@ -278,9 +283,10 @@ class TradeRoutes:
         for item in imports_data:
             buy_price = item.get("buyPrice", 0)
             sell_price = item.get("sellPrice", 0)
+            stock = item.get("stock", 0)
             
             # For undermining, we want cheap commodities to flood the market
-            if sell_price > 0 and sell_price < self.MAX_UNDERMINING_PRICE:
+            if sell_price > 0 and sell_price < self.MAX_UNDERMINING_PRICE and stock >= min_stock:
                 # Calculate distance
                 station_coords = item.get("coordinates", {})
                 dx = station_coords.get("x", current_x) - current_x
@@ -294,7 +300,7 @@ class TradeRoutes:
                     commodity_name=item.get("commodityName", "Unknown"),
                     buy_price=buy_price,
                     sell_price=sell_price,
-                    stock=item.get("stock", 0),
+                    stock=stock,
                     demand=item.get("demand", 0),
                     profit_margin=0.0,  # Not relevant for undermining
                     distance_ly=distance,

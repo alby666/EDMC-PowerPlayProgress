@@ -59,6 +59,7 @@ class PowerPlayProgress:
         self.options_view_bar_colour = tk.StringVar(value=config.get_str('options_view_bar_colour', default=self.bar_colours[2]))
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
         self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
+        self.trade_routes_min_stock = tk.IntVar(value=config.get_int('trade_routes_min_stock', default=50))
 
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -248,6 +249,7 @@ class PowerPlayProgress:
         config.set('options_view_bar_colour', str(self.options_view_bar_colour.get()))
         config.set('options_view_socials', bool(self.options_view_socials.get()))
         config.set('options_custom_format', str(self.options_custom_format.get()))
+        config.set('trade_routes_min_stock', int(self.trade_routes_min_stock.get()))
         
         if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
@@ -785,6 +787,20 @@ class PowerPlayProgress:
         # Mode selection variable
         current_mode = tk.StringVar(value=mode)
         
+        # Min stock entry (uses the stored config value)
+        min_stock_var = tk.IntVar(value=self.trade_routes_min_stock.get())
+        
+        def save_min_stock():
+            """Save the min stock setting when changed."""
+            try:
+                new_value = min_stock_var.get()
+                self.trade_routes_min_stock.set(new_value)
+                config.set('trade_routes_min_stock', new_value)
+                update_routes()  # Refresh routes with new filter
+            except (ValueError, tk.TclError):
+                # Invalid input, reset to previous value
+                min_stock_var.set(self.trade_routes_min_stock.get())
+        
         def update_routes():
             """Update the displayed routes based on selected mode."""
             selected_mode = current_mode.get()
@@ -804,6 +820,9 @@ class PowerPlayProgress:
             trade_routes_mgr = TradeRoutes()
             routes = []
             
+            # Get min stock value
+            min_stock = min_stock_var.get()
+            
             try:
                 if selected_mode == TradeRoutes.REINFORCEMENT:
                     routes = trade_routes_mgr.get_reinforcement_routes(
@@ -811,7 +830,8 @@ class PowerPlayProgress:
                         self.current_system.position.x,
                         self.current_system.position.y,
                         self.current_system.position.z,
-                        max_results=5
+                        max_results=5,
+                        min_stock=min_stock
                     )
                 elif selected_mode == TradeRoutes.UNDERMINING:
                     routes = trade_routes_mgr.get_undermining_routes(
@@ -819,7 +839,8 @@ class PowerPlayProgress:
                         self.current_system.position.x,
                         self.current_system.position.y,
                         self.current_system.position.z,
-                        max_results=5
+                        max_results=5,
+                        min_stock=min_stock
                     )
                 # Acquisition would require more logic about source/dest systems
             except Exception as e:
@@ -893,6 +914,17 @@ class PowerPlayProgress:
                                         selectcolor=bg_color, font=("Arial", 9))
         undermining_btn.pack(side=tk.LEFT, padx=5)
         theme.register(undermining_btn)
+        
+        # Min stock entry
+        tk.Label(mode_frame, text="Min Stock:", bg=bg_color, fg=fg_color, 
+                font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(15, 5))
+        
+        min_stock_entry = tk.Entry(mode_frame, textvariable=min_stock_var, width=8, 
+                                   font=("Arial", 9), justify=tk.CENTER)
+        min_stock_entry.pack(side=tk.LEFT, padx=5)
+        min_stock_entry.bind("<Return>", lambda e: save_min_stock())
+        min_stock_entry.bind("<FocusOut>", lambda e: save_min_stock())
+        theme.register(min_stock_entry)
         
         # Note: Acquisition mode would need additional UI for source system selection
         # acquisition_btn = tk.Radiobutton(mode_frame, text="Acquisition", 

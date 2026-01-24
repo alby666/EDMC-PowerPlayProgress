@@ -257,5 +257,56 @@ class TestTradeRoute(unittest.TestCase):
         self.assertEqual(route2.get_profit_per_ton(), 2500)
 
 
+class TestTradeRoutesMinStock(unittest.TestCase):
+    """Test the TradeRoutes class with min_stock filtering."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.trade_routes = TradeRoutes()
+    
+    @patch('src.traderoutes.requests.get')
+    def test_get_reinforcement_routes_with_min_stock(self, mock_get):
+        """Test getting reinforcement routes with minimum stock filter."""
+        # Mock API response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {
+                "commodityName": "Gold",
+                "systemName": "Sol",
+                "stationName": "Abraham Lincoln",
+                "buyPrice": 1000,
+                "sellPrice": 1500,  # 50% profit margin
+                "stock": 100,  # Above min_stock
+                "demand": 5000,
+                "coordinates": {"x": 0, "y": 0, "z": 0},
+                "maxLandingPadSize": 3,
+                "marketId": 12345,
+                "updatedAt": "2024-01-01T00:00:00Z"
+            },
+            {
+                "commodityName": "Platinum",
+                "systemName": "Sol",
+                "stationName": "Daedalus",
+                "buyPrice": 10000,
+                "sellPrice": 15000,  # 50% profit margin
+                "stock": 30,  # Below min_stock of 50
+                "demand": 3000,
+                "coordinates": {"x": 0, "y": 0, "z": 0},
+                "maxLandingPadSize": 2,
+                "marketId": 12346,
+                "updatedAt": "2024-01-01T00:00:00Z"
+            }
+        ]
+        mock_get.return_value = mock_response
+        
+        routes = self.trade_routes.get_reinforcement_routes("Sol", 0, 0, 0, max_results=5, min_stock=50)
+        
+        # Should only return routes with >= 50 stock
+        self.assertEqual(len(routes), 1)
+        self.assertEqual(routes[0].commodity_name, "Gold")
+        self.assertGreaterEqual(routes[0].stock, 50)
+
+
 if __name__ == '__main__':
     unittest.main()
