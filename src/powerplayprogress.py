@@ -517,10 +517,20 @@ class PowerPlayProgress:
                     # Fallback: center on main window
                     win_x = main_x + (main_width - win_width) // 2
             
-            # Vertical position: align with top of main window, but keep on screen
-            win_y = max(screen_top, main_y)
-            if win_y + win_height > screen_bottom:
-                win_y = max(screen_top, screen_bottom - win_height)
+            # Vertical position: Check if trade routes window is open and position below it
+            if self.trade_routes_window is not None and self.trade_routes_window.winfo_exists():
+                # Position below the trade routes window
+                trade_y = self.trade_routes_window.winfo_y()
+                trade_height = self.trade_routes_window.winfo_height()
+                win_y = trade_y + trade_height + 10
+                # Keep on screen
+                if win_y + win_height > screen_bottom:
+                    win_y = max(screen_top, screen_bottom - win_height)
+            else:
+                # Align with top of main window, but keep on screen
+                win_y = max(screen_top, main_y)
+                if win_y + win_height > screen_bottom:
+                    win_y = max(screen_top, screen_bottom - win_height)
             
             win.geometry(f"+{win_x}+{win_y}")
         except Exception:
@@ -704,9 +714,20 @@ class PowerPlayProgress:
                 else:
                     win_x = main_x + (main_width - win_width) // 2
             
-            win_y = max(screen_top, main_y)
-            if win_y + win_height > screen_bottom:
-                win_y = max(screen_top, screen_bottom - win_height)
+            # Vertical position: Check if rares window is open and position below it
+            if self.rares_window is not None and self.rares_window.winfo_exists():
+                # Position below the rares window
+                rares_y = self.rares_window.winfo_y()
+                rares_height = self.rares_window.winfo_height()
+                win_y = rares_y + rares_height + 10
+                # Keep on screen
+                if win_y + win_height > screen_bottom:
+                    win_y = max(screen_top, screen_bottom - win_height)
+            else:
+                # Align with top of main window, but keep on screen
+                win_y = max(screen_top, main_y)
+                if win_y + win_height > screen_bottom:
+                    win_y = max(screen_top, screen_bottom - win_height)
             
             win.geometry(f"+{win_x}+{win_y}")
         except Exception:
