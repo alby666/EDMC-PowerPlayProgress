@@ -3,6 +3,7 @@
 import sys
 import unittest
 from unittest.mock import Mock, patch, MagicMock
+import requests
 
 # Mock EDMC modules before importing traderoutes
 sys.modules['EDMCLogging'] = MagicMock()
@@ -61,7 +62,6 @@ class TestTradeRoutes(unittest.TestCase):
     @patch('src.traderoutes.requests.get')
     def test_make_api_request_failure(self, mock_get):
         """Test failed API request."""
-        import requests
         mock_get.side_effect = requests.RequestException("Connection error")
         
         result = self.trade_routes._make_api_request("test/endpoint")

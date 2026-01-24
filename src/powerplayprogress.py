@@ -541,7 +541,7 @@ class PowerPlayProgress:
         # Get foreground color from an existing label in the frame
         try:
             fg_color = self.powerplay_level_label.cget("fg")
-        except:
+        except (AttributeError, tk.TclError):
             fg_color = "black"  # Default fallback
         win.configure(bg=bg_color)
         
@@ -737,7 +737,7 @@ class PowerPlayProgress:
         bg_color = self.frame.cget("bg")
         try:
             fg_color = self.powerplay_level_label.cget("fg")
-        except:
+        except (AttributeError, tk.TclError):
             fg_color = "black"
         win.configure(bg=bg_color)
         
