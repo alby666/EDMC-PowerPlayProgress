@@ -21,6 +21,13 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 
     <img src="screen_shot_nearest_rares_light.png" width="500" height="300"> <img src="screen_shot_nearest_rares_dark.png" width="500" height="300">
 
+* NEW FEATURE: High & Low Trade Route Suggestions - Identify profitable trade routes for PowerPlay activities
+  * **Reinforcement Mode**: Find commodities with 40%+ profit margins to sell in your power's controlled systems
+  * **Undermining Mode**: Find cheap commodities (<500cr/ton) to flood rival power markets
+  * Real-time data from Ardent API with stock levels, station information, and pad size requirements
+  * Smart window positioning that stacks below the rares window when both are open
+  * Click the "Trade Routes" button to open the window for your current system
+
 * Merits by Activity - rival power kills tracking & better ship scanning
 
     <img src="screen_shot_by_activities.png">
