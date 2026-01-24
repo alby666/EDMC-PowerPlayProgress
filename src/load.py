@@ -196,6 +196,11 @@ def journal_entry(cmdrname: str, is_beta: bool, system: str, station: str, entry
                 ppp.rares_window.destroy()
                 ppp.rares_window = None
                 ppp.show_nearest_rares_window()
+            
+            if ppp.trade_routes_window is not None:
+                ppp.trade_routes_window.destroy()
+                ppp.trade_routes_window = None
+                ppp.show_trade_routes_window()
 
         case 'died' | 'docked':
             """"

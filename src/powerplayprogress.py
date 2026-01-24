@@ -20,6 +20,7 @@ from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
 from rares import Rares
+from traderoutes import TradeRoutes
 from systemprogress import SystemProgress
 from multiHyperlinkLabel import MultiHyperlinkLabel
 from canvasprogressbar import CanvasProgressBar
@@ -96,6 +97,7 @@ class PowerPlayProgress:
         self.flex_row = 7
         self.last_merits_gained = 0
         self.rares_window = None  # Track open rares window
+        self.trade_routes_window = None  # Track open trade routes window
         logger.info("PowerPlayProgress instantiated")
 
     def on_load(self) -> str:
@@ -635,6 +637,264 @@ class PowerPlayProgress:
         #theme.apply(win)
 
 
+    def show_trade_routes_window(self) -> None:
+        """
+        Opens a window showing trade route suggestions based on PowerPlay state.
+        Supports Acquisition, Reinforcement, and Undermining modes.
+        """
+        # Check if window is already open
+        if self.trade_routes_window is not None and self.trade_routes_window.winfo_exists():
+            # Bring existing window to front
+            self.trade_routes_window.lift()
+            self.trade_routes_window.focus()
+            return
+        
+        # Determine the mode based on system power state
+        # Default to reinforcement if we can't determine
+        mode = TradeRoutes.REINFORCEMENT
+        if self.current_system.power_play_state:
+            state = self.current_system.power_play_state.lower()
+            if state in ['exploited', 'fortified', 'stronghold']:
+                mode = TradeRoutes.REINFORCEMENT
+            # For acquisition, we'd need to check if system is in control range
+            # For now, we'll handle that logic later
+        
+        # Create window
+        win = tk.Toplevel()
+        self.trade_routes_window = win
+        win.title(f"Trade Routes - {self.current_system.system}")
+        win.resizable(False, False)
+        win.overrideredirect(True)  # Hide system title bar
+        
+        # Clear reference when window is destroyed
+        def on_window_close():
+            self.trade_routes_window = None
+            win.destroy()
+        
+        win.protocol("WM_DELETE_WINDOW", on_window_close)
+        
+        # Position window offset from main EDMC window (multi-monitor aware)
+        try:
+            main_window = self.frame.winfo_toplevel()
+            main_x = main_window.winfo_x()
+            main_y = main_window.winfo_y()
+            main_width = main_window.winfo_width()
+            main_height = main_window.winfo_height()
+            
+            virt_x = main_window.winfo_vrootx()
+            virt_y = main_window.winfo_vrooty()
+            virt_width = main_window.winfo_vrootwidth()
+            virt_height = main_window.winfo_vrootheight()
+            
+            screen_left = virt_x
+            screen_right = virt_x + virt_width
+            screen_top = virt_y
+            screen_bottom = virt_y + virt_height
+            
+            win_width = 750
+            win_height = 400
+            
+            right_x = main_x + main_width + 10
+            if right_x + win_width <= screen_right:
+                win_x = right_x
+            else:
+                left_x = main_x - win_width - 10
+                if left_x >= screen_left:
+                    win_x = left_x
+                else:
+                    win_x = main_x + (main_width - win_width) // 2
+            
+            win_y = max(screen_top, main_y)
+            if win_y + win_height > screen_bottom:
+                win_y = max(screen_top, screen_bottom - win_height)
+            
+            win.geometry(f"+{win_x}+{win_y}")
+        except Exception:
+            pass
+        
+        # Apply styling to match main window
+        bg_color = self.frame.cget("bg")
+        try:
+            fg_color = self.powerplay_level_label.cget("fg")
+        except:
+            fg_color = "black"
+        win.configure(bg=bg_color)
+        
+        # Create custom title bar
+        title_bar = tk.Frame(win, bg=bg_color, height=30, cursor="fleur")
+        title_bar.grid(row=0, column=0, columnspan=8, sticky="ew", padx=0, pady=0)
+        title_bar.grid_propagate(False)
+        title_bar.columnconfigure(0, weight=1)
+        
+        # Variables for window dragging
+        drag_data = {"x": 0, "y": 0}
+        
+        def start_drag(event):
+            drag_data["x"] = event.x_root - win.winfo_x()
+            drag_data["y"] = event.y_root - win.winfo_y()
+        
+        def drag_window(event):
+            x = event.x_root - drag_data["x"]
+            y = event.y_root - drag_data["y"]
+            win.geometry(f"+{x}+{y}")
+        
+        # Title label
+        title_fg_color = fg_color if config.get_int('theme') == 0 else "white"
+        title_lbl = tk.Label(title_bar, text=f"Trade Routes - {self.current_system.system}", 
+                           bg=bg_color, fg=title_fg_color, font=("Arial", 8), cursor="fleur", anchor=tk.W)
+        title_lbl.pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=True)
+        theme.register(title_lbl)
+        
+        # Bind drag events
+        title_bar.bind("<Button-1>", start_drag)
+        title_bar.bind("<B1-Motion>", drag_window)
+        title_lbl.bind("<Button-1>", start_drag)
+        title_lbl.bind("<B1-Motion>", drag_window)
+        
+        # Close button
+        close_btn = tk.Label(title_bar, text="X", bg=bg_color, fg=fg_color, cursor="hand2", font=("Arial", 10, "bold"))
+        close_btn.pack(side=tk.RIGHT, padx=2)
+        close_btn.bind("<Button-1>", lambda e: win.destroy())
+        theme.register(close_btn)
+        
+        # Mode selection frame
+        mode_frame = tk.Frame(win, bg=bg_color)
+        mode_frame.grid(row=1, column=0, columnspan=8, sticky="ew", padx=5, pady=5)
+        
+        # Mode selection variable
+        current_mode = tk.StringVar(value=mode)
+        
+        def update_routes():
+            """Update the displayed routes based on selected mode."""
+            selected_mode = current_mode.get()
+            
+            # Clear existing route labels
+            for widget in routes_frame.winfo_children():
+                widget.destroy()
+            
+            # Create loading label
+            loading_lbl = tk.Label(routes_frame, text="Loading trade routes...", 
+                                 bg=bg_color, fg=fg_color, font=("Arial", 10))
+            loading_lbl.grid(row=0, column=0, columnspan=8, pady=20)
+            theme.register(loading_lbl)
+            win.update()
+            
+            # Fetch routes based on mode
+            trade_routes_mgr = TradeRoutes()
+            routes = []
+            
+            try:
+                if selected_mode == TradeRoutes.REINFORCEMENT:
+                    routes = trade_routes_mgr.get_reinforcement_routes(
+                        self.current_system.system,
+                        self.current_system.position.x,
+                        self.current_system.position.y,
+                        self.current_system.position.z,
+                        max_results=5
+                    )
+                elif selected_mode == TradeRoutes.UNDERMINING:
+                    routes = trade_routes_mgr.get_undermining_routes(
+                        self.current_system.system,
+                        self.current_system.position.x,
+                        self.current_system.position.y,
+                        self.current_system.position.z,
+                        max_results=5
+                    )
+                # Acquisition would require more logic about source/dest systems
+            except Exception as e:
+                logger.error(f"Error fetching trade routes: {e}")
+            
+            # Clear loading message
+            loading_lbl.destroy()
+            
+            if not routes:
+                no_data_lbl = tk.Label(routes_frame, 
+                                      text="No trade routes available or API unavailable.", 
+                                      bg=bg_color, fg=fg_color, font=("Arial", 10))
+                no_data_lbl.grid(row=0, column=0, columnspan=8, pady=20)
+                theme.register(no_data_lbl)
+                return
+            
+            # Column headers
+            headers = ["Commodity", "Station", "Buy Price", "Sell Price", 
+                      "Profit/t", "Margin %", "Stock", "Pad Size"]
+            for col, header in enumerate(headers):
+                lbl = tk.Label(routes_frame, text=header, font=("Arial", 9, "bold"), 
+                             bg=bg_color, fg=fg_color)
+                lbl.grid(row=0, column=col, padx=3, pady=3, sticky="nsew")
+                theme.register(lbl)
+            
+            # Display routes
+            for row, route in enumerate(routes, start=1):
+                tk.Label(routes_frame, text=route.commodity_name, bg=bg_color, fg=fg_color, 
+                        font=("Arial", 9)).grid(row=row, column=0, padx=3, pady=2, sticky="w")
+                tk.Label(routes_frame, text=route.station_name, bg=bg_color, fg=fg_color,
+                        font=("Arial", 9)).grid(row=row, column=1, padx=3, pady=2, sticky="w")
+                tk.Label(routes_frame, text=f"{route.buy_price:,}", bg=bg_color, fg=fg_color,
+                        font=("Arial", 9)).grid(row=row, column=2, padx=3, pady=2, sticky="e")
+                tk.Label(routes_frame, text=f"{route.sell_price:,}", bg=bg_color, fg=fg_color,
+                        font=("Arial", 9)).grid(row=row, column=3, padx=3, pady=2, sticky="e")
+                
+                profit = route.get_profit_per_ton()
+                tk.Label(routes_frame, text=f"{profit:,}", bg=bg_color, fg=fg_color,
+                        font=("Arial", 9)).grid(row=row, column=4, padx=3, pady=2, sticky="e")
+                
+                if selected_mode != TradeRoutes.UNDERMINING:
+                    margin_pct = route.profit_margin * 100
+                    tk.Label(routes_frame, text=f"{margin_pct:.1f}%", bg=bg_color, fg=fg_color,
+                            font=("Arial", 9)).grid(row=row, column=5, padx=3, pady=2, sticky="e")
+                else:
+                    tk.Label(routes_frame, text="-", bg=bg_color, fg=fg_color,
+                            font=("Arial", 9)).grid(row=row, column=5, padx=3, pady=2, sticky="e")
+                
+                tk.Label(routes_frame, text=f"{route.stock:,}" if route.stock else "-", 
+                        bg=bg_color, fg=fg_color, font=("Arial", 9)).grid(row=row, column=6, padx=3, pady=2, sticky="e")
+                tk.Label(routes_frame, text=route.max_landing_pad_size or "-", bg=bg_color, fg=fg_color,
+                        font=("Arial", 9)).grid(row=row, column=7, padx=3, pady=2, sticky="w")
+                
+                # Register all labels with theme
+                for widget in routes_frame.grid_slaves(row=row):
+                    theme.register(widget)
+        
+        # Mode buttons
+        tk.Label(mode_frame, text="Mode:", bg=bg_color, fg=fg_color, font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=5)
+        
+        reinforcement_btn = tk.Radiobutton(mode_frame, text="Reinforcement", 
+                                          variable=current_mode, value=TradeRoutes.REINFORCEMENT,
+                                          command=update_routes, bg=bg_color, fg=fg_color,
+                                          selectcolor=bg_color, font=("Arial", 9))
+        reinforcement_btn.pack(side=tk.LEFT, padx=5)
+        theme.register(reinforcement_btn)
+        
+        undermining_btn = tk.Radiobutton(mode_frame, text="Undermining", 
+                                        variable=current_mode, value=TradeRoutes.UNDERMINING,
+                                        command=update_routes, bg=bg_color, fg=fg_color,
+                                        selectcolor=bg_color, font=("Arial", 9))
+        undermining_btn.pack(side=tk.LEFT, padx=5)
+        theme.register(undermining_btn)
+        
+        # Note: Acquisition mode would need additional UI for source system selection
+        # acquisition_btn = tk.Radiobutton(mode_frame, text="Acquisition", 
+        #                                 variable=current_mode, value=TradeRoutes.ACQUISITION,
+        #                                 command=update_routes, bg=bg_color, fg=fg_color,
+        #                                 selectcolor=bg_color, font=("Arial", 9))
+        # acquisition_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Routes display frame
+        routes_frame = tk.Frame(win, bg=bg_color)
+        routes_frame.grid(row=2, column=0, columnspan=8, sticky="nsew", padx=5, pady=5)
+        
+        # Info label
+        info_text = "Reinforcement: 40%+ profit to your power's systems | Undermining: <500cr/t to rival powers"
+        info_lbl = tk.Label(win, text=info_text, bg=bg_color, fg=fg_color, 
+                          font=("Arial", 8), wraplength=700, justify=tk.LEFT)
+        info_lbl.grid(row=3, column=0, columnspan=8, sticky="ew", padx=5, pady=5)
+        theme.register(info_lbl)
+        
+        # Initial load of routes
+        update_routes()
+
+
     def reset_session_progress(self) -> None:
         """
         Reset the progress of the current session except for total merits.
@@ -765,6 +1025,11 @@ class PowerPlayProgress:
             self.buttons_frame, 
             text="Rares", 
             command=self.show_nearest_rares_window
+        )
+        self.trade_routes_button = tk.Button(
+            self.buttons_frame,
+            text="Trade Routes",
+            command=self.show_trade_routes_window
         )
         current_row += 1
 
@@ -1001,6 +1266,7 @@ class PowerPlayProgress:
         self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=2)
         self.reset_session_button.grid(row=cur_row, column=2, sticky="W", padx=2)
         self.rares_button.grid(row=cur_row, column=3, sticky="W", padx=2)
+        self.trade_routes_button.grid(row=cur_row, column=4, sticky="W", padx=2)
 
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)
