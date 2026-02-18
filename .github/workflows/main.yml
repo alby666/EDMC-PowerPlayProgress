@@ -3,15 +3,14 @@ name: Build Release
 on:
   workflow_dispatch:
     inputs:
-      release_number:
-        description: "Release version number (e.g. 1.4.2)"
-        required: true
-        type: string
       dry_run:
         description: "Run without creating a GitHub release"
         required: false
         type: boolean
         default: false
+
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -59,60 +58,79 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0   # required for changelog generation
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Update plugin_version in consts.py
+      - name: Read current version and increment minor
+        id: version
         run: |
-          sed -i "s/^plugin_version *= *.*/plugin_version = \"${{ github.event.inputs.release_number }}\"/" consts.py
+          current=$(grep -oP "plugin_version.*?['\"\`]\K[^'\"\`]+" src/consts.py)
+          echo "Current version: $current"
+
+          IFS='.' read -r major minor patch <<< "$current"
+          new_minor=$((minor + 1))
+          new_version="${major}.${new_minor}.0"
+          echo "New version: $new_version"
+
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+
+      - name: Update plugin_version in src/consts.py
+        run: |
+          sed -i "s/^plugin_version.*/plugin_version: str = '${{ steps.version.outputs.version }}'/" src/consts.py
 
       - name: Commit version bump
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add consts.py
-          git commit -m "Bump version to ${{ github.event.inputs.release_number }}"
+          git add src/consts.py
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}"
           git push
 
-      - name: Install changelog generator
+      - name: Rename src folder and create zip
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ruby ruby-dev
-          sudo gem install github_changelog_generator
+          cp -r src EDMC-PowerPlayProgress
+          zip -r EDMC-PowerPlayProgress.zip EDMC-PowerPlayProgress
 
-      - name: Generate CHANGELOG.md
-        env:
-          CHANGELOG_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Virus scan
+        id: virus_scan
         run: |
-          github_changelog_generator \
-            --user ${{ github.repository_owner }} \
-            --project ${{ github.event.repository.name }} \
-            --token ${{ secrets.GITHUB_TOKEN }} \
-            --future-release ${{ github.event.inputs.release_number }}
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clamav > /dev/null 2>&1
+          sudo freshclam --quiet || true
 
-      - name: Commit changelog
-        run: |
-          git add CHANGELOG.md
-          git commit -m "Update changelog for ${{ github.event.inputs.release_number }}"
-          git push
+          echo "## ClamAV Virus Scan Results" > virus_scan_results.txt
+          echo '```' >> virus_scan_results.txt
+          clamscan --infected --recursive EDMC-PowerPlayProgress.zip >> virus_scan_results.txt 2>&1 || true
+          echo '```' >> virus_scan_results.txt
 
-      - name: Zip src folder
-        run: |
-          cd src
-          zip -r ../EDMC-PowerPlayProgress.zip .
+          cat virus_scan_results.txt
 
-      - name: Create Release (skipped in dry-run mode)
-        if: ${{ github.event.inputs.dry_run == 'false' }}
-        id: create_release
+          {
+            echo "scan_results<<SCAN_EOF"
+            cat virus_scan_results.txt
+            echo "SCAN_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if clamscan --infected --recursive EDMC-PowerPlayProgress.zip 2>&1 | grep -q "Infected files: 0"; then
+            echo "scan_passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scan_passed=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Virus scan detected infected files!"
+          fi
+
+      - name: Create Release
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.virus_scan.outputs.scan_passed == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.release_number }}
-          name: Release ${{ github.event.inputs.release_number }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           generate_release_notes: true
+          body: |
+            ${{ steps.virus_scan.outputs.scan_results }}
           files: EDMC-PowerPlayProgress.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
