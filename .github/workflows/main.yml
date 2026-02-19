@@ -104,7 +104,9 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq clamav > /dev/null 2>&1
-          sudo freshclam --quiet || true
+          sudo mkdir -p /var/log/clamav /var/lib/clamav
+          sudo chown -R clamav:clamav /var/log/clamav /var/lib/clamav
+          sudo freshclam --quiet 2>/dev/null || true
 
           echo "## ClamAV Virus Scan Results" > virus_scan_results.txt
           echo '```' >> virus_scan_results.txt
