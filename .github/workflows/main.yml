@@ -31,6 +31,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Upgrade pip and setuptools
+        run: |
+          pip install --upgrade pip setuptools
+
       - name: Install dependencies
         run: |
           cd src
