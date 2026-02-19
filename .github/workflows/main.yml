@@ -65,15 +65,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Read current version and increment minor
+      - name: Read current version and increment patch
         id: version
         run: |
           current=$(grep -oP "plugin_version.*?['\"\`]\K[^'\"\`]+" src/consts.py)
           echo "Current version: $current"
 
           IFS='.' read -r major minor patch <<< "$current"
-          new_minor=$((minor + 1))
-          new_version="${major}.${new_minor}.0"
+          new_patch=$((patch + 1))
+          new_version="${major}.${minor}.${new_patch}"
           echo "New version: $new_version"
 
           echo "version=$new_version" >> "$GITHUB_OUTPUT"

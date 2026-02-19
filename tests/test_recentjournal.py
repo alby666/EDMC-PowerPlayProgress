@@ -215,31 +215,6 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
         self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
 
-    def test_multiple_donation_missions(self):
-        """
-        Test the isDonation property.
-        """
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:12Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230328 })
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
-        #self.recent_journal.removeDonationMissionLogs()
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230370 })
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"MissionCompleted", "Faction":"Social Manamaya Democrats", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890051, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"Social Manamaya Democrats", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
-        #self.recent_journal.removeDonationMissionLogs()
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
-        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:12Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230328 })
-        self.assertTrue(self.recent_journal.isDonationMissionMeritsFirst)
-        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
-
     def test_isScan(self):
         """
         Test the isScan property.
@@ -280,6 +255,34 @@ class TestRecentJournal(unittest.TestCase):
         self.recent_journal.add_entry({'timestamp': '2025-08-24T13:29:57Z', 'event': 'PowerplayMerits', 'Power': 'Jerome Archer', 'MeritsGained': 11, 'TotalMerits': 1279403})
         self.assertFalse(self.recent_journal.isRivalPowerKills)
     """
+
+"""     
+    def test_multiple_donation_missions(self):
+    """
+"""
+        Test the isDonation property."""
+"""
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:12Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230328 })
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
+        #self.recent_journal.removeDonationMissionLogs()
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230370 })
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:36Z", "event":"MissionCompleted", "Faction":"Social Manamaya Democrats", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890051, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"Social Manamaya Democrats", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertTrue(self.recent_journal.isDonationMissionMeritsSecond)
+        #self.recent_journal.removeDonationMissionLogs()
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:18Z", "event":"MissionCompleted", "Faction":"League of LHS 197 Order", "Name":"Mission_AltruismCredits_name", "LocalisedName":"Donate 1,000,000 Cr to the cause", "MissionID":1017890050, "Donation":"1000000", "Donated":1000000, "FactionEffects":[ { "Faction":"League of LHS 197 Order", "Effects":[ { "Effect":"$MISSIONUTIL_Interaction_Summary_EP_up;", "Effect_Localised":"The economic status of $#MinorFaction; has improved in the $#System; system.", "Trend":"UpGood" } ], "Influence":[ { "SystemAddress":5068732573073, "Trend":"UpGood", "Influence":"++" } ], "ReputationTrend":"UpGood", "Reputation":"++" } ] })
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond)
+        self.recent_journal.add_entry({"timestamp":"2025-05-31T14:07:12Z", "event":"PowerplayMerits", "Power":"Jerome Archer", "MeritsGained":42, "TotalMerits":1230328 })
+        self.assertTrue(self.recent_journal.isDonationMissionMeritsFirst)
+        self.assertFalse(self.recent_journal.isDonationMissionMeritsSecond) 
+        """
 
 if __name__ == "__main__":
     unittest.main()

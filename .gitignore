@@ -367,3 +367,5 @@ libs/urllib3-2.6.3.dist-info/METADATA
 libs/urllib3-2.6.3.dist-info/RECORD
 libs/urllib3-2.6.3.dist-info/WHEEL
 libs/urllib3-2.6.3.dist-info/licenses/LICENSE.txt
+src/__pycache__/traderoutes.cpython-312.pyc
+tests/__pycache__/test_traderoutes.cpython-312.pyc
