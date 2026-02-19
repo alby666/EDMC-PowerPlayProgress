@@ -99,26 +99,25 @@ jobs:
           cp -r src EDMC-PowerPlayProgress
           zip -r EDMC-PowerPlayProgress.zip EDMC-PowerPlayProgress
           
-      - name: Install ClamAV
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clamav clamav-daemon
-
-      - name: Update virus definitions
-        run: sudo freshclam
-
-      - name: Scan repository
+      - name: Scan repository with ClamAV
         id: clamscan
+        uses: addnab/docker-run-action@v3
+        with:
+          image: clamav/clamav:latest
+          options: -v ${{ github.workspace }}:/src
+          run: |
+            clamscan -r --bell -i /src 2>&1 | tee /src/clamscan_results.txt
+            exit ${PIPESTATUS[0]}
+
+      - name: Process scan results
         run: |
-          clamscan -r --bell -i . 2>&1 | tee clamscan_results.txt
-          exit_code=${PIPESTATUS[0]}
           {
             echo "results<<SCAN_EOF"
             cat clamscan_results.txt
             echo "SCAN_EOF"
           } >> "$GITHUB_OUTPUT"
+          exit_code=$(<clamscan_results.txt tail -1 | grep -o '[0-9]*$' || echo '0')
           echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
-          exit $exit_code
 
       - name: Create Release
         if: ${{ github.event.inputs.dry_run != 'true' && steps.clamscan.outputs.exit_code == '0' }}
