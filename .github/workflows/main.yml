@@ -98,45 +98,40 @@ jobs:
         run: |
           cp -r src EDMC-PowerPlayProgress
           zip -r EDMC-PowerPlayProgress.zip EDMC-PowerPlayProgress
-
-      - name: Virus scan
-        id: virus_scan
+          
+      - name: Install ClamAV
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq clamav > /dev/null 2>&1
-          sudo mkdir -p /var/log/clamav /var/lib/clamav
-          sudo chown -R clamav:clamav /var/log/clamav /var/lib/clamav
-          sudo freshclam --quiet 2>/dev/null || true
+          sudo apt-get update
+          sudo apt-get install -y clamav clamav-daemon
 
-          echo "## ClamAV Virus Scan Results" > virus_scan_results.txt
-          echo '```' >> virus_scan_results.txt
-          clamscan --infected --recursive EDMC-PowerPlayProgress.zip >> virus_scan_results.txt 2>&1 || true
-          echo '```' >> virus_scan_results.txt
+      - name: Update virus definitions
+        run: sudo freshclam
 
-          cat virus_scan_results.txt
-
+      - name: Scan repository
+        id: clamscan
+        run: |
+          clamscan -r --bell -i . 2>&1 | tee clamscan_results.txt
+          exit_code=${PIPESTATUS[0]}
           {
-            echo "scan_results<<SCAN_EOF"
-            cat virus_scan_results.txt
+            echo "results<<SCAN_EOF"
+            cat clamscan_results.txt
             echo "SCAN_EOF"
           } >> "$GITHUB_OUTPUT"
-
-          if clamscan --infected --recursive EDMC-PowerPlayProgress.zip 2>&1 | grep -q "Infected files: 0"; then
-            echo "scan_passed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "scan_passed=false" >> "$GITHUB_OUTPUT"
-            echo "::error::Virus scan detected infected files!"
-          fi
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit $exit_code
 
       - name: Create Release
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.virus_scan.outputs.scan_passed == 'true' }}
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.clamscan.outputs.exit_code == '0' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           generate_release_notes: true
           body: |
-            ${{ steps.virus_scan.outputs.scan_results }}
+            ## Virus Scan Results
+            ```
+            ${{ steps.clamscan.outputs.results }}
+            ```
           files: EDMC-PowerPlayProgress.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
