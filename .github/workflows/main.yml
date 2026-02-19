@@ -110,17 +110,22 @@ jobs:
             exit ${PIPESTATUS[0]}
 
       - name: Process scan results
+        id: process_scan
         run: |
           {
             echo "results<<SCAN_EOF"
             cat clamscan_results.txt
             echo "SCAN_EOF"
           } >> "$GITHUB_OUTPUT"
-          exit_code=$(<clamscan_results.txt tail -1 | grep -o '[0-9]*$' || echo '0')
-          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          
+          if grep -q "Infected files: 0" clamscan_results.txt; then
+            echo "scan_passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scan_passed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Release
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.clamscan.outputs.exit_code == '0' }}
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.process_scan.outputs.scan_passed == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -129,8 +134,9 @@ jobs:
           body: |
             ## Virus Scan Results
             ```
-            ${{ steps.clamscan.outputs.results }}
+            ${{ steps.process_scan.outputs.results }}
             ```
           files: EDMC-PowerPlayProgress.zip
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
