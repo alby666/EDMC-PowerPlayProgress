@@ -110,9 +110,9 @@ jobs:
         id: process_scan
         run: |
           {
-            echo "results<<'SCAN_EOF'"
-            cat clamscan_results.txt
-            echo "SCAN_EOF"
+            echo "results<<EOF"
+            cat clamscan_results.txt | sed 's/\$/\\$/g'
+            echo "EOF"
           } >> "$GITHUB_OUTPUT"
           
           if grep -q "Infected files: 0" clamscan_results.txt; then
