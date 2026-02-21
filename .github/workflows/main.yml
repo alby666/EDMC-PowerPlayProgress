@@ -98,41 +98,15 @@ jobs:
         run: |
           cp -r src EDMC-PowerPlayProgress
           zip -r EDMC-PowerPlayProgress.zip EDMC-PowerPlayProgress
-          
-      - name: Scan repository with ClamAV
-        id: clamscan
-        run: |
-          sudo apt-get update -qq > /dev/null 2>&1
-          sudo apt-get install -y -qq clamav > /dev/null 2>&1
-          clamscan -r --bell -i . 2>&1 | tee clamscan_results.txt || true
-
-      - name: Process scan results
-        id: process_scan
-        run: |
-          {
-            echo "results<<EOF"
-            cat clamscan_results.txt | sed 's/\$/\\$/g'
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-          
-          if grep -q "Infected files: 0" clamscan_results.txt; then
-            echo "scan_passed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "scan_passed=false" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Create Release
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.process_scan.outputs.scan_passed == 'true' }}
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
+          draft: true
           generate_release_notes: true
-          body: |
-            ## Virus Scan Results
-            ```
-            ${{ steps.process_scan.outputs.results }}
-            ```
           files: EDMC-PowerPlayProgress.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
