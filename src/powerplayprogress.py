@@ -349,7 +349,7 @@ class PowerPlayProgress:
 
     def copy_to_clipboard_text(self):
         if not self.options_view_totals.get() and not self.options_view_merits_by_systems.get() and not self.options_view_powerplay_commodities.get() and not self.options_view_merits_by_activities.get():
-            messagebox.showinfo("No data to copy", "No data to copy to clipboard. Try showing somthing first!")
+            messagebox.showinfo(t("No data to copy"), t("No data to copy to clipboard. Try showing somthing first!"))
             return
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
@@ -365,7 +365,7 @@ class PowerPlayProgress:
 
     def copy_to_clipboard_discord(self):
         if not self.options_view_totals.get() and not self.options_view_merits_by_systems.get() and not self.options_view_powerplay_commodities.get() and not self.options_view_merits_by_activities.get():
-            messagebox.showinfo("No data to copy", "No data to copy to clipboard. Try showing somthing first!")
+            messagebox.showinfo(t("No data to copy"), t("No data to copy to clipboard. Try showing somthing first!"))
             return
         # Clear the clipboard and append the label's text
         self.frame.clipboard_clear()
@@ -396,8 +396,8 @@ class PowerPlayProgress:
                     self.frame.clipboard_append(progress_text + "\n")
                 except KeyError as ex:
                     messagebox.showerror(
-                        "Format Error",
-                        f"Missing key in format: {ex}\nAvailable keys: {list(fmt_args.keys())}"
+                        t("Format Error"),
+                        t("format_error_message").format(ex=ex, keys=list(fmt_args.keys()))
                     )
 
     def version_check(self) -> str:
@@ -427,8 +427,8 @@ class PowerPlayProgress:
         Reset the progress of the current session.
         """
         response = messagebox.askyesno(
-            title="Reset Progress",
-            message="Are you sure you want to reset ALL the progress in this session?",
+            title=t("Reset Progress"),
+            message=t("Are you sure you want to reset ALL the progress in this session?"),
             icon=messagebox.WARNING,
         )
         if response:
@@ -460,7 +460,7 @@ class PowerPlayProgress:
         # Create window
         win = tk.Toplevel()
         self.rares_window = win  # Store reference
-        win.title(f"Nearest Rare Commodities - {self.current_system.system}")
+        win.title(t("nearest_rares_title").format(system=self.current_system.system))
         win.resizable(False, False)
         win.overrideredirect(True)  # Hide the system title bar
         
@@ -549,7 +549,7 @@ class PowerPlayProgress:
         
         # Title label
         title_fg_color = fg_color if config.get_int('theme') == 0 else "white"
-        title_lbl = tk.Label(title_bar, text=f"Nearest Rare Commodities - {self.current_system.system}", bg=bg_color, fg=title_fg_color, font=("Arial", 8), cursor="fleur", anchor=tk.W)
+        title_lbl = tk.Label(title_bar, text=t("nearest_rares_title").format(system=self.current_system.system), bg=bg_color, fg=title_fg_color, font=("Arial", 8), cursor="fleur", anchor=tk.W)
         title_lbl.pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=True)
         theme.register(title_lbl)
         
@@ -566,16 +566,16 @@ class PowerPlayProgress:
         theme.register(close_btn)
                 
         # Column headers (now at row 1)
-        headers = ["Commodity", "System", "Station", "Max Pad Size", "Stock", "Distance (ly)"]
+        headers = [t("Commodity"), t("System"), t("Station"), t("Max Pad Size"), t("Stock"), t("Distance (ly)")]
         for col, header in enumerate(headers):
             lbl = tk.Label(win, text=header, font=("Arial", 10, "bold"), bg=bg_color, fg=fg_color)
             lbl.grid(row=1, column=col if col <= 1 else col + 1, padx=5, pady=5, sticky="nsew")
             theme.register(lbl)
 
         size_mapping = {
-            1: "Small",
-            2: "Medium",
-            3: "Large"
+            1: t("Small"),
+            2: t("Medium"),
+            3: t("Large")
         }
 
         # Create copy icon from base64 PNG
@@ -636,8 +636,8 @@ class PowerPlayProgress:
         Reset the progress of the current session except for total merits.
         """
         response = messagebox.askyesno(
-            title="Reset Session Progress",
-            message="Are you sure you want to reset the Total Merit this session?",
+            title=t("Reset Session Progress"),
+            message=t("Are you sure you want to reset the Total Merit this session?"),
             icon=messagebox.WARNING,
         )
         if response:
@@ -656,7 +656,7 @@ class PowerPlayProgress:
         current_row = 0
         self.frame = tk.Frame(parent)
         self.frame.grid_columnconfigure(0, weight=1)
-        self.powerplay_level_label = tk.Label(self.frame, text="PowerPlay Progress: Awaiting data", justify=tk.CENTER)
+        self.powerplay_level_label = tk.Label(self.frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
         self.powerplay_level_label.grid(row=current_row, column=0, columnspan=2)
         current_row += 1
 
@@ -665,7 +665,7 @@ class PowerPlayProgress:
             #update_version = '0.9.1'  # for testing
             if update_version != '':
                 url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
-                update_link = MultiHyperlinkLabel(self.frame, text=f"Version {update_version} available", foreground="blue", cursor="hand2", url=url)
+                update_link = MultiHyperlinkLabel(self.frame, text=t("version_available").format(version=update_version), foreground="blue", cursor="hand2", url=url)
                 update_link.grid(row=current_row, columnspan=2, sticky="N")
                 current_row += 1
         except Exception as ex:
@@ -693,9 +693,9 @@ class PowerPlayProgress:
         self.socials_frame.grid_columnconfigure(0, weight=1)
         self.socials_frame.grid_columnconfigure(1, weight=1)
         self.socials_frame.grid_columnconfigure(2, weight=1)
-        self.socials_link_reddit = MultiHyperlinkLabel(self.socials_frame, text=f"Reddit", foreground="blue", cursor="hand2")
-        self.socials_power_label = tk.Label(self.socials_frame, text="PowerPlay Progress", justify=tk.CENTER)
-        self.socials_link_discord = MultiHyperlinkLabel(self.socials_frame, text=f"Discord", foreground="blue", cursor="hand2")
+        self.socials_link_reddit = MultiHyperlinkLabel(self.socials_frame, text=t("Reddit"), foreground="blue", cursor="hand2")
+        self.socials_power_label = tk.Label(self.socials_frame, text=t("PowerPlay Progress"), justify=tk.CENTER)
+        self.socials_link_discord = MultiHyperlinkLabel(self.socials_frame, text=t("Discord"), foreground="blue", cursor="hand2")
         self.socials_link_reddit.grid(row=current_row, column=0)
         self.socials_power_label.grid(row=current_row, column=1)
         self.socials_link_discord.grid(row=current_row, column=2)
@@ -703,13 +703,13 @@ class PowerPlayProgress:
 
         self.totals_frame = tk.Frame(self.frame)
         self.totals_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        self.total_merits_label = tk.Label(self.totals_frame, text=f"Total Merits: 345345")
+        self.total_merits_label = tk.Label(self.totals_frame, text=t("total_merits_fmt").format(value=""))
         current_row += 1
-        self.total_session_merits = tk.Label(self.totals_frame, text=f"Total Merits this sessiona: 345345")
+        self.total_session_merits = tk.Label(self.totals_frame, text=t("total_session_merits_fmt").format(value=""))
         current_row += 1
-        self.total_since_merits = tk.Label(self.totals_frame, text="Total Merits since last dock/death: 23423")
+        self.total_since_merits = tk.Label(self.totals_frame, text=t("total_since_merits_fmt").format(value=""))
         current_row += 1
-        self.total_prev_merits = tk.Label(self.totals_frame, text="Total Merits since previous dock/death: N/A")
+        self.total_prev_merits = tk.Label(self.totals_frame, text=t("total_prev_merits_fmt").format(value=""))
         current_row += 1
 
         self.mertits_by_system_frame = tk.Frame(self.frame)
@@ -717,7 +717,7 @@ class PowerPlayProgress:
         self.mertits_by_system_frame.grid_columnconfigure(1, weight=2)
         self.mertits_by_system_frame.grid_columnconfigure(2, weight=1)
         self.mertits_by_system_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        self.merits_by_systems_label = tk.Label(self.mertits_by_system_frame, text="Merits by Systems:")
+        self.merits_by_systems_label = tk.Label(self.mertits_by_system_frame, text=t("Merits by Systems:"))
         current_row += 1
         self.flex_row = current_row
 
@@ -726,7 +726,7 @@ class PowerPlayProgress:
         self.pp_commods_frame.grid_columnconfigure(1, weight=2)
         self.pp_commods_frame.grid_columnconfigure(2, weight=1)
         self.pp_commods_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text="PowerPlay Commodities (collected/delivered): 34/56")
+        self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text=t("powerplay_commodities_fmt").format(collected="", delivered=""))
         current_row += 1
 
         self.merits_by_activty_frame = tk.Frame(self.frame)
@@ -744,22 +744,22 @@ class PowerPlayProgress:
         self.buttons_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
         self.copy_button = tk.Button(
             self.buttons_frame,
-            text="Copy",
+            text=t("Copy"),
             command=self.copy_to_clipboard_text
         )
         self.reset_button = tk.Button(
             self.buttons_frame,
-            text="Reset",
+            text=t("Reset"),
             command=self.reset_progress
         )
         self.reset_session_button = tk.Button(
             self.buttons_frame,
-            text="Reset Session",
+            text=t("Reset Session"),
             command=self.reset_session_progress
         )
         self.rares_button = tk.Button(
             self.buttons_frame, 
-            text="Rares", 
+            text=t("Rares"), 
             command=self.show_nearest_rares_window
         )
         current_row += 1
@@ -792,7 +792,7 @@ class PowerPlayProgress:
             self.progressbar_frame.grid()
             self.pb.canvas.grid()
             self.powerplay_level_label.grid()
-            self.powerplay_level_label.config(text=f"PowerPlay Level: {self.current_session.power_play_rank} -> {self.current_session.power_play_rank + 1}", justify=tk.CENTER)
+            self.powerplay_level_label.config(text=t("powerplay_level_fmt").format(rank=self.current_session.power_play_rank, next_rank=self.current_session.power_play_rank + 1), justify=tk.CENTER)
             self.pb.update_progress(round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2))
 
             if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
@@ -834,16 +834,16 @@ class PowerPlayProgress:
             self.total_since_merits.grid(column=0, sticky=tk.W)
             self.total_prev_merits.grid(column=0, sticky=tk.W)
             total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
-            self.total_merits_label.config(text=f"Total Merits:\t\t\t\t{total_str}")
+            self.total_merits_label.config(text=t("total_merits_fmt").format(value=total_str))
 
             total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
-            self.total_session_merits.config(text=f"Total Merits this session:\t\t\t{total_str}")
+            self.total_session_merits.config(text=t("total_session_merits_fmt").format(value=total_str))
             
             total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
-            self.total_since_merits.config(text=f"Total Merits since last dock/death:\t\t{total_str}")
+            self.total_since_merits.config(text=t("total_since_merits_fmt").format(value=total_str))
             
             total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
-            self.total_prev_merits.config(text=f"Total Merits since previous dock/death:\t{total_str}")
+            self.total_prev_merits.config(text=t("total_prev_merits_fmt").format(value=total_str))
         else:
             self.total_merits_label.grid_remove()
             self.total_session_merits.grid_remove()
@@ -917,12 +917,12 @@ class PowerPlayProgress:
         if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
             self.pp_commods_frame.grid()
             self.powerplay_commodities_label.grid(row=cur_row, column=0, columnspan=3, sticky="w")
-            self.powerplay_commodities_label.config(text=f"PowerPlay Commodities (collected/delivered): {self.current_session.total_commodities_collected} t / {self.current_session.total_commodities_delivered} t")
+            self.powerplay_commodities_label.config(text=t("powerplay_commodities_fmt").format(collected=self.current_session.total_commodities_collected, delivered=self.current_session.total_commodities_delivered))
             cur_row += 1
 
             if self.current_session.total_commodities_delivered > 0:
                 if self.options_view_powerplay_commodities_by_type.get():
-                    lbl = tk.Label(self.pp_commods_frame, text=f"Delivered By type:")
+                    lbl = tk.Label(self.pp_commods_frame, text=t("Delivered By type:"))
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     cur_row += 1
@@ -936,7 +936,7 @@ class PowerPlayProgress:
                             cur_row += 1
 
                 if self.options_view_powerplay_commodities_by_system.get():
-                    lbl = tk.Label(self.pp_commods_frame, text=f"Delivered By system:")
+                    lbl = tk.Label(self.pp_commods_frame, text=t("Delivered By system:"))
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl) 
                     cur_row += 1
@@ -959,14 +959,14 @@ class PowerPlayProgress:
 
         if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
             self.merits_by_activty_frame.grid()
-            lbl = tk.Label(self.merits_by_activty_frame, text=f"Merits by Activity:")
+            lbl = tk.Label(self.merits_by_activty_frame, text=t("Merits by Activity:"))
             lbl.grid(row=cur_row, column=0, sticky="w")
             self.power_play_list_labels.append(lbl)
             theme.register(lbl)
             cur_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
-                    lbl = tk.Label(self.merits_by_activty_frame, text=f"  - {act.activity_type}")
+                    lbl = tk.Label(self.merits_by_activty_frame, text=f"  - {t(act.activity_type)}")
                     lbl.grid(row=cur_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     lblMerits = tk.Label(self.merits_by_activty_frame, text=f"{act.merits}")
