@@ -16,6 +16,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 from consts import PLUGIN_NAME, mined_heading, plugin_version
+from i18n import t, setup as i18n_setup
 from recentjournal import RecentJournal
 from sessionprogress import SessionProgress
 from socials import Socials
@@ -106,6 +107,7 @@ class PowerPlayProgress:
 
         :return: The name of the plugin, which will be used by EDMC for logging and for the settings window
         """
+        i18n_setup()
         return PLUGIN_NAME
 
     def on_unload(self) -> None:
@@ -131,16 +133,16 @@ class PowerPlayProgress:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        MultiHyperlinkLabel(frame, text="EDMC Power Play Progress", background=nb.Label().cget('background'),
+        MultiHyperlinkLabel(frame, text=t("EDMC Power Play Progress"), background=nb.Label().cget('background'),
                     url='https://github.com/alby666/EDMC-PowerPlayProgress/releases', underline=True) \
             .grid(row=0, padx=5, pady= 10, sticky=tk.W)    
 
-        MultiHyperlinkLabel(frame, text="Report an Issue", background=nb.Label().cget('background'),
+        MultiHyperlinkLabel(frame, text=t("Report an Issue"), background=nb.Label().cget('background'),
                     url='https://github.com/alby666/EDMC-PowerPlayProgress/issues/new/choose', underline=True) \
             .grid(row=0, column=1, padx=5, pady= 10, sticky=tk.E)    
 
         notebook = ttk.Notebook(frame)    
-        notebook.add(self.get_display_prefs_tab(notebook), text='Display options')
+        notebook.add(self.get_display_prefs_tab(notebook), text=t('Display options'))
         notebook.grid(row=10, columnspan=2, pady=0, sticky=tk.NSEW)
 
         return frame
@@ -155,38 +157,35 @@ class PowerPlayProgress:
         row_count = 0
         
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_progress_bar, text="Show/hide Progress Bar").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
-        nb.Checkbutton(frame, variable=self.options_view_totals, text="Show/hide Totals").grid(row=row_count, column=1, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_progress_bar, text=t("Show/hide Progress Bar")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_totals, text=t("Show/hide Totals")).grid(row=row_count, column=1, padx=5, pady=2, sticky="w")
         row_count += 1
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_socials, text="Show/hide Socials Links").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_socials, text=t("Show/hide Socials Links")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text="Show/hide Merits by Systems").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_systems, text=t("Show/hide Merits by Systems")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_merits_by_activities, text="Show/hide Merits by Activities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_merits_by_activities, text=t("Show/hide Merits by Activities")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text="Detail mined commodities").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_detail_mined_commodities, text=t("Detail mined commodities")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text="Show/hide Powerplay commodities").grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities, text=t("Show/hide Powerplay commodities")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_type, text="By type").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_type, text=t("By type")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
-        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text="By system").grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        nb.Checkbutton(frame, variable=self.options_view_powerplay_commodities_by_system, text=t("By system")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
         ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
         row_count += 1
 
         export_options = ['Text', 'Discord', 'Custom']
         nb.Label(frame,
-            text='Copy to Clipboard format:\n' +
-                    '   Text - plain ascii text\n' +
-                    '   Discord - markup format, better suited for pasting to Discord\n' +
-                    '   Custom - custom format, one line by system',
+            text=t('copy_clipboard_format_help'),
             justify=tk.LEFT) \
         .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
         row_count+= 1
@@ -199,7 +198,7 @@ class PowerPlayProgress:
         row_count += 1
 
         nb.Label(frame,
-            text='Custom format:',
+            text=t('Custom format:'),
             justify=tk.LEFT) \
         .grid(row=row_count, padx=5, column=0, sticky=tk.NW, columnspan=2)
         row_count += 1
@@ -208,10 +207,7 @@ class PowerPlayProgress:
         row_count += 1
 
         nb.Label(frame,
-            text='Progress bar colour:\n' +
-                    '   Green - always green\n' +
-                    '   Orange - always orange\n' +
-                    '   Match theme - match the EDMC theme colour',
+            text=t('progress_bar_colour_help'),
             justify=tk.LEFT) \
         .grid(row=row_count-4, column=2, padx=5, sticky=tk.NW, columnspan=2)
         nb.OptionMenu(
