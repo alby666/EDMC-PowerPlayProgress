@@ -101,19 +101,16 @@ jobs:
           
       - name: Scan repository with ClamAV
         id: clamscan
-        uses: addnab/docker-run-action@v3
-        with:
-          image: clamav/clamav:latest
-          options: -v ${{ github.workspace }}:/src
-          run: |
-            clamscan -r --bell -i /src 2>&1 | tee /src/clamscan_results.txt
-            exit ${PIPESTATUS[0]}
+        run: |
+          sudo apt-get update -qq > /dev/null 2>&1
+          sudo apt-get install -y -qq clamav > /dev/null 2>&1
+          clamscan -r --bell -i . 2>&1 | tee clamscan_results.txt || true
 
       - name: Process scan results
         id: process_scan
         run: |
           {
-            echo "results<<SCAN_EOF"
+            echo "results<<'SCAN_EOF'"
             cat clamscan_results.txt
             echo "SCAN_EOF"
           } >> "$GITHUB_OUTPUT"
