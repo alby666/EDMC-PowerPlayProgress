@@ -13,9 +13,33 @@ from __future__ import annotations
 import json
 import locale
 import os
+from consts import PLUGIN_NAME
+from config import appname # type: ignore # noqa: N813
+from EDMCLogging import get_plugin_logger # type: ignore # noqa: N813
 
 _translations: dict[str, str] = {}
+_logger = get_plugin_logger(f"{appname}.{PLUGIN_NAME}")
 _fallback: dict[str, str] = {}
+
+# Exact mapping of Windows locale names to ISO 639 language codes.
+# Used before the generic prefix map so special cases take priority.
+_WINDOWS_LOCALE_MAP = {
+    'Irish_Ireland': 'ga',
+}
+
+# Maps the lowercase language prefix of a Windows locale name (e.g. "french"
+# from "French_France") to the corresponding ISO 639-1 code.
+_WINDOWS_LANG_PREFIX_MAP = {
+    'chinese': 'zh',
+    'english': 'en',
+    'french': 'fr',
+    'german': 'de',
+    'irish': 'ga',
+    'japanese': 'ja',
+    'portuguese': 'pt',
+    'russian': 'ru',
+    'spanish': 'es',
+}
 
 
 def _load_file(path: str) -> dict[str, str]:
@@ -52,14 +76,80 @@ def _find_translation(lang_code: str) -> dict[str, str]:
     return {}
 
 
+def _lang_from_env() -> str | None:
+    """
+    Return a language code from standard POSIX locale environment variables,
+    or *None* if none are set to a useful value.
+
+    Checked in priority order: ``LANGUAGE`` (colon-separated list, first
+    entry used), ``LC_ALL``, ``LC_MESSAGES``, ``LANG``.
+    Encoding suffixes (``.UTF-8``) and modifier tags (``@euro``) are stripped.
+    The sentinel values ``C`` and ``POSIX`` are ignored.
+    """
+    _SENTINELS = {'', 'c', 'posix'}
+    candidates: list[str] = []
+
+    language_var = os.environ.get('LANGUAGE', '')
+    if language_var:
+        # LANGUAGE is a colon-separated list; take the first non-empty entry.
+        candidates.extend(language_var.split(':'))
+    for var in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
+        val = os.environ.get(var, '')
+        if val:
+            candidates.append(val)
+
+    for raw in candidates:
+        # Strip encoding suffix and locale modifier (e.g. "fr_FR.UTF-8@euro")
+        code = raw.split('.')[0].split('@')[0]
+        if code.lower() not in _SENTINELS:
+            return code.lower()
+    return None
+
+
 def _detect_lang() -> str:
-    """Return the best-guess language code from the system locale."""
+    """
+    Return the best-guess ISO 639 language code for the running system.
+
+    Detection order:
+    1. POSIX locale environment variables (``LANGUAGE``, ``LC_ALL``,
+       ``LC_MESSAGES``, ``LANG``) — primary on Linux and macOS.
+    2. ``locale.getlocale()`` after ``setlocale(LC_ALL, '')`` — primary on
+       Windows where env vars are not set.  Windows locale names such as
+       ``French_France`` are mapped to ISO codes via
+       :data:`_WINDOWS_LOCALE_MAP` (exact) then
+       :data:`_WINDOWS_LANG_PREFIX_MAP` (prefix).
+    3. Falls back to ``'en'`` if nothing can be determined.
+    """
+    # --- Path 1: env vars (Linux / macOS) ---
+    env_lang = _lang_from_env()
+    if env_lang is not None:
+        _logger.debug(f"Detected language from env: {env_lang}")
+        return env_lang
+
+    # --- Path 2: locale.getlocale() (Windows) ---
     try:
-        lang = locale.getdefaultlocale()[0]  # e.g. "fr_FR" or "en_US"
+        locale.setlocale(locale.LC_ALL, '')
+        lang = locale.getlocale()[0]  # e.g. "fr_FR", "en_US", "French_France"
         if lang:
-            return lang
+            # Exact Windows locale name (e.g. "Irish_Ireland" -> "ga")
+            if lang in _WINDOWS_LOCALE_MAP:
+                mapped = _WINDOWS_LOCALE_MAP[lang]
+                _logger.debug(f"Detected language (Windows exact map): {mapped}")
+                return mapped
+            # Generic Windows prefix (e.g. "French_France" -> "french" -> "fr")
+            prefix = lang.split('_')[0].lower()
+            if prefix in _WINDOWS_LANG_PREFIX_MAP:
+                mapped = _WINDOWS_LANG_PREFIX_MAP[prefix]
+                _logger.debug(f"Detected language (Windows prefix map): {mapped}")
+                return mapped
+            # POSIX-style code already in the right format (e.g. "fr_FR")
+            mapped = lang.lower()
+            _logger.debug(f"Detected language: {mapped}")
+            return mapped
     except Exception:
         pass
+
+    _logger.debug("No language detected, falling back to English")
     return 'en'
 
 

@@ -24,7 +24,7 @@ from rares import Rares
 from systemprogress import SystemProgress
 from multiHyperlinkLabel import MultiHyperlinkLabel
 from canvasprogressbar import CanvasProgressBar
-from PIL import Image, ImageOps
+from PIL import Image
 
 import myNotebook as nb  # type: ignore # noqa: N813
 from config import appname, config # type: ignore # noqa: N813
@@ -76,6 +76,10 @@ class PowerPlayProgress:
         self.total_session_merits: tk.Label = tk.Label()
         self.total_since_merits: tk.Label = tk.Label()
         self.total_prev_merits: tk.Label = tk.Label()
+        self.total_merits_value: tk.Label = tk.Label()    
+        self.total_session_merits_value: tk.Label = tk.Label()
+        self.total_since_merits_value: tk.Label = tk.Label()
+        self.total_prev_merits_value: tk.Label = tk.Label()
         self.powerplay_commodities_label = tk.Label()
         self.merits_by_systems_label: tk.Label = tk.Label()
         self.copy_button: tk.Button = tk.Button()
@@ -94,7 +98,6 @@ class PowerPlayProgress:
         self.buttons_frame: tk.Frame = tk.Frame()
         self.socials_power_label: tk.Label = tk.Label()
 
-        self.flex_row = 7
         self.last_merits_gained = 0
         self.rares_window = None  # Track open rares window
         logger.info("PowerPlayProgress instantiated")
@@ -562,7 +565,7 @@ class PowerPlayProgress:
         # Close button
         close_btn = tk.Label(title_bar, text="X", bg=bg_color, fg=fg_color, cursor="hand2", font=("Arial", 10, "bold"))
         close_btn.pack(side=tk.RIGHT, padx=2)
-        close_btn.bind("<Button-1>", lambda e: win.destroy())
+        close_btn.bind("<Button-1>", lambda e: on_window_close())
         theme.register(close_btn)
                 
         # Column headers (now at row 1)
@@ -653,12 +656,12 @@ class PowerPlayProgress:
         :param parent: EDMC main window Tk
         :return: Our frame
         """
-        current_row = 0
+        frame_row = 0
         self.frame = tk.Frame(parent)
         self.frame.grid_columnconfigure(0, weight=1)
         self.powerplay_level_label = tk.Label(self.frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
-        self.powerplay_level_label.grid(row=current_row, column=0, columnspan=2)
-        current_row += 1
+        self.powerplay_level_label.grid(row=frame_row, column=0, columnspan=2)
+        frame_row += 1
 
         try:
             update_version = self.version_check()
@@ -666,8 +669,8 @@ class PowerPlayProgress:
             if update_version != '':
                 url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
                 update_link = MultiHyperlinkLabel(self.frame, text=t("version_available").format(version=update_version), foreground="blue", cursor="hand2", url=url)
-                update_link.grid(row=current_row, columnspan=2, sticky="N")
-                current_row += 1
+                update_link.grid(row=frame_row, columnspan=2, sticky="N")
+                frame_row += 1
         except Exception as ex:
             # Swallow any exceptions here, we don't want to crash the plugin if we can't check for updates
             logger.error('Failed to check for updates', exc_info=ex)
@@ -675,73 +678,82 @@ class PowerPlayProgress:
         # progressbar
         self.progressbar_frame = tk.Frame(self.frame)
         self.progressbar_frame.grid_columnconfigure(0, weight=1)
-        self.progressbar_frame.grid(row=current_row, column=0, sticky="NSEW")
+        self.progressbar_frame.grid(row=frame_row, column=0, sticky="NSEW")
+        frame_row += 1
         self.pb = CanvasProgressBar(
             self.progressbar_frame,
             width=230,
             fg="green" if config.get_int("theme") == 0 else "orange"
         )
-        # place the progressbar
-        self.pb.canvas.grid(column=0, row=current_row, columnspan=2)
+        # CanvasProgressBar already grids canvas at row=0 inside progressbar_frame
         self.pb.update_progress(50)
-        current_row += 1
 
         #Socials
         self.socials_frame = tk.Frame(self.frame)
-        self.socials_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        current_row += 1
+        self.socials_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        frame_row += 1
         self.socials_frame.grid_columnconfigure(0, weight=1)
         self.socials_frame.grid_columnconfigure(1, weight=1)
         self.socials_frame.grid_columnconfigure(2, weight=1)
         self.socials_link_reddit = MultiHyperlinkLabel(self.socials_frame, text=t("Reddit"), foreground="blue", cursor="hand2")
         self.socials_power_label = tk.Label(self.socials_frame, text=t("PowerPlay Progress"), justify=tk.CENTER)
         self.socials_link_discord = MultiHyperlinkLabel(self.socials_frame, text=t("Discord"), foreground="blue", cursor="hand2")
-        self.socials_link_reddit.grid(row=current_row, column=0)
-        self.socials_power_label.grid(row=current_row, column=1)
-        self.socials_link_discord.grid(row=current_row, column=2)
-        current_row += 1
+        self.socials_link_reddit.grid(row=0, column=0)
+        self.socials_power_label.grid(row=0, column=1)
+        self.socials_link_discord.grid(row=0, column=2)
 
         self.totals_frame = tk.Frame(self.frame)
-        self.totals_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        self.total_merits_label = tk.Label(self.totals_frame, text=t("total_merits_fmt").format(value=""))
-        current_row += 1
-        self.total_session_merits = tk.Label(self.totals_frame, text=t("total_session_merits_fmt").format(value=""))
-        current_row += 1
-        self.total_since_merits = tk.Label(self.totals_frame, text=t("total_since_merits_fmt").format(value=""))
-        current_row += 1
-        self.total_prev_merits = tk.Label(self.totals_frame, text=t("total_prev_merits_fmt").format(value=""))
-        current_row += 1
+        self.totals_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        frame_row += 1
+        self.totals_frame.grid_columnconfigure(0, weight=0)
+        self.totals_frame.grid_columnconfigure(1, weight=2)
+
+        self.total_merits_label = tk.Label(self.totals_frame, text=t("total_merits_fmt"))
+        self.total_merits_label.grid(row=0, column=0, sticky=tk.W)
+        self.total_merits_value = tk.Label(self.totals_frame, text="0")
+        self.total_merits_value.grid(row=0, column=1, sticky=tk.W)
+        self.total_session_merits = tk.Label(self.totals_frame, text=t("total_session_merits_fmt"))
+        self.total_session_merits.grid(row=1, column=0, sticky=tk.W)
+        self.total_session_merits_value = tk.Label(self.totals_frame, text="0")
+        self.total_session_merits_value.grid(row=1, column=1, sticky=tk.W)
+        self.total_since_merits = tk.Label(self.totals_frame, text=t("total_since_merits_fmt"))
+        self.total_since_merits.grid(row=2, column=0, sticky=tk.W)
+        self.total_since_merits_value = tk.Label(self.totals_frame, text="0")
+        self.total_since_merits_value.grid(row=2, column=1, sticky=tk.W)
+        self.total_prev_merits = tk.Label(self.totals_frame, text=t("total_prev_session_merits_fmt"))
+        self.total_prev_merits.grid(row=3, column=0, sticky=tk.W)
+        self.total_prev_merits_value = tk.Label(self.totals_frame, text="0")
+        self.total_prev_merits_value.grid(row=3, column=1, sticky=tk.W)
 
         self.mertits_by_system_frame = tk.Frame(self.frame)
         self.mertits_by_system_frame.grid_columnconfigure(0, weight=0)
         self.mertits_by_system_frame.grid_columnconfigure(1, weight=2)
         self.mertits_by_system_frame.grid_columnconfigure(2, weight=1)
-        self.mertits_by_system_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        self.mertits_by_system_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        frame_row += 1
         self.merits_by_systems_label = tk.Label(self.mertits_by_system_frame, text=t("Merits by Systems:"))
-        current_row += 1
-        self.flex_row = current_row
 
         self.pp_commods_frame = tk.Frame(self.frame)
         self.pp_commods_frame.grid_columnconfigure(0, weight=0)
         self.pp_commods_frame.grid_columnconfigure(1, weight=2)
         self.pp_commods_frame.grid_columnconfigure(2, weight=1)
-        self.pp_commods_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        self.pp_commods_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        frame_row += 1
         self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text=t("powerplay_commodities_fmt").format(collected="", delivered=""))
-        current_row += 1
 
         self.merits_by_activty_frame = tk.Frame(self.frame)
         self.merits_by_activty_frame.grid_columnconfigure(0, weight=0)
         self.merits_by_activty_frame.grid_columnconfigure(1, weight=2)
         self.merits_by_activty_frame.grid_columnconfigure(2, weight=1)
-        self.merits_by_activty_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
-        current_row += 1
+        self.merits_by_activty_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        frame_row += 1
 
         self.buttons_frame = tk.Frame(self.frame)
         self.buttons_frame.grid_columnconfigure(0, weight=0)
         self.buttons_frame.grid_columnconfigure(1, weight=0)
         self.buttons_frame.grid_columnconfigure(2, weight=0)
         self.buttons_frame.grid_columnconfigure(3, weight=1)
-        self.buttons_frame.grid(row=current_row, column=0, columnspan=2, sticky="NSEW")
+        self.buttons_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
         self.copy_button = tk.Button(
             self.buttons_frame,
             text=t("Copy"),
@@ -762,7 +774,6 @@ class PowerPlayProgress:
             text=t("Rares"), 
             command=self.show_nearest_rares_window
         )
-        current_row += 1
 
         #hide them for now
         self.progressbar_frame.grid_remove()
@@ -782,10 +793,16 @@ class PowerPlayProgress:
         """
         Update the display with the current session and system data.
         """
-        # Get the system's default locale
-        default_locale = locale.getlocale()
-        # Set the locale to the system's default
-        locale.setlocale(locale.LC_ALL, '.'.join(default_locale))
+        # Get the system's default locale and attempt to set it
+        try:
+            default_locale = locale.getlocale()
+            if default_locale[0] and default_locale[1]:
+                locale.setlocale(locale.LC_ALL, '.'.join(default_locale))
+            elif default_locale[0]:
+                locale.setlocale(locale.LC_ALL, default_locale[0])
+        except (locale.Error, ValueError):
+            # Ignore locale errors and continue with default locale
+            pass
 
         ## Update the progress bar and label with the current session data
         if self.options_view_progress_bar.get():
@@ -833,22 +850,35 @@ class PowerPlayProgress:
             self.total_session_merits.grid(column=0, sticky=tk.W)
             self.total_since_merits.grid(column=0, sticky=tk.W)
             self.total_prev_merits.grid(column=0, sticky=tk.W)
+
             total_str = locale.format_string("%d", round(self.total_merits, 0), grouping=True)
-            self.total_merits_label.config(text=t("total_merits_fmt").format(value=total_str))
+            self.total_merits_label.config(text=t("total_merits_fmt"))
+            self.total_merits_value.config(text=total_str)
+            self.total_merits_value.grid(column=1, sticky=tk.W)
 
             total_str = locale.format_string("%d", round(self.total_merits - self.starting_merits, 0), grouping=True)
-            self.total_session_merits.config(text=t("total_session_merits_fmt").format(value=total_str))
-            
+            self.total_session_merits.config(text=t("total_session_merits_fmt"))
+            self.total_session_merits_value.config(text=total_str)
+            self.total_session_merits_value.grid(column=1, sticky=tk.W)
+
             total_str = locale.format_string("%d", round(self.current_session.earned_merits, 0), grouping=True)
-            self.total_since_merits.config(text=t("total_since_merits_fmt").format(value=total_str))
-            
+            self.total_since_merits.config(text=t("total_since_merits_fmt"))
+            self.total_since_merits_value.config(text=total_str)
+            self.total_since_merits_value.grid(column=1, sticky=tk.W)
+
             total_str = locale.format_string("%d", round(self.previous_session.earned_merits, 0), grouping=True)
-            self.total_prev_merits.config(text=t("total_prev_merits_fmt").format(value=total_str))
+            self.total_prev_merits.config(text=t("total_prev_merits_fmt"))
+            self.total_prev_merits_value.config(text=total_str)
+            self.total_prev_merits_value.grid(column=1, sticky=tk.W)
         else:
             self.total_merits_label.grid_remove()
             self.total_session_merits.grid_remove()
             self.total_since_merits.grid_remove()
             self.total_prev_merits.grid_remove()
+            self.total_merits_value.grid_remove()
+            self.total_session_merits_value.grid_remove()
+            self.total_since_merits_value.grid_remove()
+            self.total_prev_merits_value.grid_remove()
             self.totals_frame.grid_remove()
         
         ## Remove the previous labels from the list and destroy them
@@ -860,16 +890,16 @@ class PowerPlayProgress:
             hpl.destroy()
         self.power_play_hpl_labels.clear()
 
-        cur_row = self.flex_row
+        sys_row = 0
         if self.options_view_merits_by_systems.get() and len(self.systems) > 0:
             if (self.total_merits - self.starting_merits) > 0:
                 self.mertits_by_system_frame.grid()
                 if self.current_system.earnings > 0:
-                    self.merits_by_systems_label.grid(row=cur_row, column=0, sticky="w")
+                    self.merits_by_systems_label.grid(row=sys_row, column=0, sticky="w")
                 else:
                     self.mertits_by_system_frame.grid_remove()
                     self.merits_by_systems_label.grid_remove()
-                cur_row += 1
+                sys_row += 1
                 for sys in self.systems:
                     if sys.earnings > 0:
                         #tab_spacing = '\t' if len(sys.system) < 12 else ''
@@ -898,7 +928,7 @@ class PowerPlayProgress:
                         lbl = None
                         total_str = locale.format_string("%d", round(sys.earnings, 0), grouping=True)
                         hypl = MultiHyperlinkLabel(self.mertits_by_system_frame, compound=tk.RIGHT, url=self.system_url(sys.system), popup_copy=True, name=f"system{re.sub(r'[^a-zA-Z0-9]', '', sys.system)}", text=f"  - {sys.system}")
-                        hypl.grid(row=cur_row, column=0, sticky="w")
+                        hypl.grid(row=sys_row, column=0, sticky="w")
                         theme.register(hypl)
                         self.power_play_hpl_labels.append(hypl)
                         hypl = None                        
@@ -906,97 +936,98 @@ class PowerPlayProgress:
                             lbl = tk.Label(self.mertits_by_system_frame, text=f"{total_str} : {sys.controlling_power} : {sys.power_play_state} : {round(sys.power_play_state_control_progress * 100, 2)}%{control_state_change}{reinforcement_state_change}{undermining_state_change}")
                         else:
                             lbl = tk.Label(self.mertits_by_system_frame, text=f"{total_str}")
-                        lbl.grid(row=cur_row, column=1, columnspan=2, sticky="w")
+                        lbl.grid(row=sys_row, column=1, columnspan=2, sticky="w")
                         theme.register(lbl)
                         self.power_play_list_labels.append(lbl)
-                        cur_row += 1
+                        sys_row += 1
         else:
             self.mertits_by_system_frame.grid_remove()
             self.merits_by_systems_label.grid_remove()
 
+        commod_row = 0
         if self.options_view_powerplay_commodities.get() and (self.current_session.total_commodities_collected > 0 or self.current_session.total_commodities_delivered > 0):
             self.pp_commods_frame.grid()
-            self.powerplay_commodities_label.grid(row=cur_row, column=0, columnspan=3, sticky="w")
+            self.powerplay_commodities_label.grid(row=commod_row, column=0, columnspan=3, sticky="w")
             self.powerplay_commodities_label.config(text=t("powerplay_commodities_fmt").format(collected=self.current_session.total_commodities_collected, delivered=self.current_session.total_commodities_delivered))
-            cur_row += 1
+            commod_row += 1
 
             if self.current_session.total_commodities_delivered > 0:
                 if self.options_view_powerplay_commodities_by_type.get():
                     lbl = tk.Label(self.pp_commods_frame, text=t("Delivered By type:"))
-                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    lbl.grid(row=commod_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
-                    cur_row += 1
+                    commod_row += 1
                     for commod in self.current_session.commodities_delivered_types:
                         count = self.current_session.total_commodities_delivered_by_type(commod)
                         if count > 0:
                             lbl = tk.Label(self.pp_commods_frame, text=f"  - {commod}:\t{round(count, 0)} t")
-                            lbl.grid(row=cur_row, column=0, columnspan=3, sticky="w")
+                            lbl.grid(row=commod_row, column=0, columnspan=3, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
-                            cur_row += 1
+                            commod_row += 1
 
                 if self.options_view_powerplay_commodities_by_system.get():
                     lbl = tk.Label(self.pp_commods_frame, text=t("Delivered By system:"))
-                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    lbl.grid(row=commod_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl) 
-                    cur_row += 1
+                    commod_row += 1
                     for commod in self.current_session.commodities_delivered_systems:
                         count = self.current_session.total_commodities_delivered_by_system(commod)
                         if count > 0:
                             hypl = MultiHyperlinkLabel(self.pp_commods_frame, compound=tk.RIGHT, url=self.system_url(commod), popup_copy=True, name='system', text=f"  - {commod}")
-                            hypl.grid(row=cur_row, column=0, sticky="w")
+                            hypl.grid(row=commod_row, column=0, sticky="w")
                             total_str = locale.format_string("%d", round(count, 0), grouping=True)
                             lbl = tk.Label(self.pp_commods_frame, text=f"{total_str} t")
-                            lbl.grid(row=cur_row, column=1, columnspan=2, sticky="w")
+                            lbl.grid(row=commod_row, column=1, columnspan=2, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             self.power_play_hpl_labels.append(hypl)
                             theme.register(lbl)
                             theme.register(hypl)
-                            cur_row += 1
+                            commod_row += 1
         else:
             self.pp_commods_frame.grid_remove()
             self.powerplay_commodities_label.grid_remove()
 
+        act_row = 0
         if self.options_view_merits_by_activities.get() and self.current_session.activities.get_total_merits() > 0:
             self.merits_by_activty_frame.grid()
             lbl = tk.Label(self.merits_by_activty_frame, text=t("Merits by Activity:"))
-            lbl.grid(row=cur_row, column=0, sticky="w")
+            lbl.grid(row=act_row, column=0, sticky="w")
             self.power_play_list_labels.append(lbl)
             theme.register(lbl)
-            cur_row += 1
+            act_row += 1
             for act in self.current_session.activities.activities:
                 if act.merits > 0: 
                     lbl = tk.Label(self.merits_by_activty_frame, text=f"  - {t(act.activity_type)}")
-                    lbl.grid(row=cur_row, column=0, sticky="w")
+                    lbl.grid(row=act_row, column=0, sticky="w")
                     self.power_play_list_labels.append(lbl)
                     lblMerits = tk.Label(self.merits_by_activty_frame, text=f"{act.merits}")
-                    lblMerits.grid(row=cur_row, column=1, columnspan=2, sticky="w")
+                    lblMerits.grid(row=act_row, column=1, columnspan=2, sticky="w")
                     self.power_play_list_labels.append(lblMerits)
                     theme.register(lbl)
                     theme.register(lblMerits)
-                    cur_row += 1
+                    act_row += 1
                     if act.activity_type == mined_heading:
                         for commod in self.current_session.activities.mined_commodities:
                             lbl = tk.Label(self.merits_by_activty_frame, text=f"      - {commod.commodity_type.title()} : {commod.merits} : {commod.tonnage} t")
-                            lbl.grid(row=cur_row, column=0, sticky="w")
+                            lbl.grid(row=act_row, column=0, sticky="w")
                             self.power_play_list_labels.append(lbl)
                             theme.register(lbl)
-                            cur_row += 1
+                            act_row += 1
         else:
             self.merits_by_activty_frame.grid_remove()
 
-        self.buttons_frame.grid(row=cur_row, column=0, columnspan=2, sticky="NSEW")
+        self.buttons_frame.grid()
         if self.options_view_export_format.get() == 'Text':
             self.copy_button.config(command=self.copy_to_clipboard_text)
         elif self.options_view_export_format.get() == 'Custom':
             self.copy_button.config(command=self.copy_to_clipboard_custom_format)
         else:
             self.copy_button.config(command=self.copy_to_clipboard_discord)
-        cur_row += 1
-        self.copy_button.grid(row=cur_row, column=0, sticky="W", padx=2)
-        self.reset_button.grid(row=cur_row, column=1, sticky="W", padx=2)
-        self.reset_session_button.grid(row=cur_row, column=2, sticky="W", padx=2)
-        self.rares_button.grid(row=cur_row, column=3, sticky="W", padx=2)
+        self.copy_button.grid(row=0, column=0, sticky="W", padx=2)
+        self.reset_button.grid(row=0, column=1, sticky="W", padx=2)
+        self.reset_session_button.grid(row=0, column=2, sticky="W", padx=2)
+        self.rares_button.grid(row=0, column=3, sticky="W", padx=2)
 
         theme.update(self.frame)
         theme.update(self.mertits_by_system_frame)

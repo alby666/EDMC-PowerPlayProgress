@@ -1,4 +1,5 @@
 """Tests for the src.i18n translation module."""
+import locale
 import sys
 import os
 import unittest
@@ -6,6 +7,13 @@ from unittest.mock import patch
 
 # Ensure the src package is importable without EDMC runtime modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+# Mock EDMC-provided modules that are only available at runtime
+from unittest.mock import MagicMock
+_mock_config = MagicMock()
+_mock_config.appname = 'EDMarketConnector'
+sys.modules.setdefault('config', _mock_config)
+sys.modules.setdefault('EDMCLogging', MagicMock())
 
 import i18n
 
@@ -19,40 +27,40 @@ class TestI18nSetup(unittest.TestCase):
         i18n._fallback = {}
 
     def test_setup_loads_english_fallback(self):
-        with patch('locale.getdefaultlocale', return_value=('en_US', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='en_us'):
             i18n.setup()
         self.assertGreater(len(i18n._fallback), 0)
         self.assertEqual(i18n._fallback.get('Copy'), 'Copy')
 
     def test_setup_loads_french(self):
-        with patch('locale.getdefaultlocale', return_value=('fr_FR', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='fr_fr'):
             i18n.setup()
         self.assertGreater(len(i18n._translations), 0)
         self.assertEqual(i18n._translations.get('Copy'), 'Copier')
 
     def test_setup_loads_german(self):
-        with patch('locale.getdefaultlocale', return_value=('de_DE', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='de_de'):
             i18n.setup()
         self.assertEqual(i18n._translations.get('Copy'), 'Kopieren')
 
     def test_setup_loads_irish(self):
-        with patch('locale.getdefaultlocale', return_value=('ga_IE', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='ga'):
             i18n.setup()
         self.assertEqual(i18n._translations.get('Copy'), 'Cóipeáil')
 
     def test_setup_lang_prefix_fallback(self):
-        """A locale like 'fr_CA' should fall back to fr.json."""
-        with patch('locale.getdefaultlocale', return_value=('fr_CA', 'UTF-8')):
+        """A locale like 'fr_ca' should fall back to fr.json."""
+        with patch.object(i18n, '_detect_lang', return_value='fr_ca'):
             i18n.setup()
         self.assertEqual(i18n._translations.get('Reset'), 'Réinitialiser')
 
     def test_setup_unknown_locale_uses_empty_translations(self):
-        with patch('locale.getdefaultlocale', return_value=('xx_XX', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='xx_xx'):
             i18n.setup()
         self.assertEqual(i18n._translations, {})
 
     def test_english_locale_leaves_translations_empty(self):
-        with patch('locale.getdefaultlocale', return_value=('en_GB', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='en_gb'):
             i18n.setup()
         self.assertEqual(i18n._translations, {})
 
@@ -86,7 +94,7 @@ class TestI18nT(unittest.TestCase):
 
     def test_all_english_keys_present(self):
         """Every key in en.json must be returned by t() when fallback is loaded."""
-        with patch('locale.getdefaultlocale', return_value=('en_US', 'UTF-8')):
+        with patch.object(i18n, '_detect_lang', return_value='en_us'):
             i18n.setup()
         import json
         en_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'translations', 'en.json')
@@ -113,17 +121,74 @@ class TestI18nT(unittest.TestCase):
 class TestDetectLang(unittest.TestCase):
     """Test the locale detection helper."""
 
-    def test_returns_locale_code(self):
-        with patch('locale.getdefaultlocale', return_value=('fr_FR', 'UTF-8')):
-            self.assertEqual(i18n._detect_lang(), 'fr_FR')
+    # --- Env var path (Linux / macOS) ---
 
-    def test_returns_en_on_none(self):
-        with patch('locale.getdefaultlocale', return_value=(None, None)):
-            self.assertEqual(i18n._detect_lang(), 'en')
+    def test_language_env_var_takes_first_entry(self):
+        """LANGUAGE=fr_FR:en should return 'fr_fr'."""
+        with patch.dict('os.environ', {'LANGUAGE': 'fr_FR:en'}, clear=True):
+            self.assertEqual(i18n._detect_lang(), 'fr_fr')
 
-    def test_returns_en_on_exception(self):
-        with patch('locale.getdefaultlocale', side_effect=ValueError):
-            self.assertEqual(i18n._detect_lang(), 'en')
+    def test_lang_env_var_strips_encoding(self):
+        """LANG=de_DE.UTF-8 should return 'de_de'."""
+        with patch.dict('os.environ', {'LANG': 'de_DE.UTF-8'}, clear=True):
+            self.assertEqual(i18n._detect_lang(), 'de_de')
+
+    def test_lang_env_var_strips_modifier(self):
+        """LANG=ja_JP.UTF-8@euro should return 'ja_jp'."""
+        with patch.dict('os.environ', {'LANG': 'ja_JP.UTF-8@euro'}, clear=True):
+            self.assertEqual(i18n._detect_lang(), 'ja_jp')
+
+    def test_c_sentinel_falls_through_to_locale(self):
+        """LANG=C should be ignored and fall through to locale.getlocale()."""
+        with patch.dict('os.environ', {'LANG': 'C'}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=('fr_FR', 'UTF-8')):
+                    self.assertEqual(i18n._detect_lang(), 'fr_fr')
+
+    def test_lc_messages_used_when_lang_absent(self):
+        """LC_MESSAGES should be used when LANGUAGE and LC_ALL are absent."""
+        with patch.dict('os.environ', {'LC_MESSAGES': 'ru_RU.UTF-8'}, clear=True):
+            self.assertEqual(i18n._detect_lang(), 'ru_ru')
+
+    # --- Windows locale path ---
+
+    def test_returns_posix_locale_code_lowercased(self):
+        """POSIX locale name 'fr_FR' from getlocale() should return 'fr_fr'."""
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=('fr_FR', 'UTF-8')):
+                    self.assertEqual(i18n._detect_lang(), 'fr_fr')
+
+    def test_windows_french_france_maps_to_fr(self):
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=('French_France', 'cp1252')):
+                    self.assertEqual(i18n._detect_lang(), 'fr')
+
+    def test_windows_german_germany_maps_to_de(self):
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=('German_Germany', 'cp1252')):
+                    self.assertEqual(i18n._detect_lang(), 'de')
+
+    def test_windows_irish_ireland_exact_map_to_ga(self):
+        """Irish_Ireland is in the exact map and should take priority."""
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=('Irish_Ireland', 'cp1252')):
+                    self.assertEqual(i18n._detect_lang(), 'ga')
+
+    def test_returns_en_when_getlocale_returns_none(self):
+        """getlocale() returning None (macOS edge case) should fall back to 'en'."""
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale'):
+                with patch('locale.getlocale', return_value=(None, None)):
+                    self.assertEqual(i18n._detect_lang(), 'en')
+
+    def test_returns_en_on_setlocale_exception(self):
+        with patch.dict('os.environ', {}, clear=True):
+            with patch('locale.setlocale', side_effect=locale.Error):
+                self.assertEqual(i18n._detect_lang(), 'en')
 
 
 if __name__ == '__main__':
