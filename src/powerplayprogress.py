@@ -707,7 +707,8 @@ class PowerPlayProgress:
             self.minimised_frame,
             width=120,
             height=15,
-            fg="green" if config.get_int("theme") == 0 else "orange"
+            fg="green" if config.get_int("theme") == 0 else "orange",
+            text_font=("Arial", 7, "bold")
         )
         self.minimised_pb.canvas.grid(row=0, column=1, sticky="W", padx=0, pady=2)
         self.minimised_pb.update_progress(0)
