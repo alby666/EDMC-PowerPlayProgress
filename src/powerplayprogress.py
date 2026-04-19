@@ -44,7 +44,6 @@ class PowerPlayProgress:
 
     bar_colours = ['Green', 'Orange', 'Match theme']
     DISPLAY_MODE_ALWAYS = 'always'
-    DISPLAY_MODE_HIDE = 'hide'
     DISPLAY_MODE_MINIMISE = 'minimise'
     
     def __init__(self) -> None:
@@ -62,7 +61,7 @@ class PowerPlayProgress:
         self.options_view_bar_colour = tk.StringVar(value=config.get_str('options_view_bar_colour', default=self.bar_colours[2]))
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
         self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
-        self.options_view_display_mode = tk.StringVar(value=config.get_str('options_view_display_mode', default=self.DISPLAY_MODE_ALWAYS))
+        self.options_view_display_mode = tk.StringVar(value=config.get_str('options_view_display_mode', default=self.DISPLAY_MODE_MINIMISE))
 
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -175,8 +174,6 @@ class PowerPlayProgress:
         nb.Label(frame, text=t("display_mode_label"), justify=tk.LEFT).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         row_count += 1
         nb.Radiobutton(frame, variable=self.options_view_display_mode, value=self.DISPLAY_MODE_ALWAYS, text=t("Always display")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
-        row_count += 1
-        nb.Radiobutton(frame, variable=self.options_view_display_mode, value=self.DISPLAY_MODE_HIDE, text=t("Hide if not in Power Play system")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
         nb.Radiobutton(frame, variable=self.options_view_display_mode, value=self.DISPLAY_MODE_MINIMISE, text=t("Minimise if not in Power Play system")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
         row_count += 1
@@ -871,29 +868,13 @@ class PowerPlayProgress:
 
         # Determine display state based on display mode, powerplay system status, and manual toggle
         display_mode = self.options_view_display_mode.get()
-        should_hide = False
         should_minimise = False
 
         if self.is_minimized:
             # Manual toggle always takes precedence - show minimised
             should_minimise = True
-        elif display_mode == self.DISPLAY_MODE_HIDE and not self.is_in_pp_system:
-            should_hide = True
         elif display_mode == self.DISPLAY_MODE_MINIMISE and not self.is_in_pp_system:
             should_minimise = True
-
-        if should_hide:
-            # Hide everything
-            self.header_frame.grid()
-            self.powerplay_level_label.grid()
-            self.powerplay_level_label.config(text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
-            self.toggle_button.grid()
-            self.toggle_button.config(text="\u25BC")
-            self.minimised_frame.grid_remove()
-            self.full_content_frame.grid_remove()
-            theme.update(self.frame)
-            theme.update(self.header_frame)
-            return
 
         if should_minimise:
             # Show minimised view

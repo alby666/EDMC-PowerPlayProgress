@@ -70,7 +70,6 @@
   "Rival Power Kills:": "Rival Power Kills:",
   "display_mode_label": "Display mode when not in a Power Play system:",
   "Always display": "Always display",
-  "Hide if not in Power Play system": "Hide if not in Power Play system",
   "Minimise if not in Power Play system": "Minimise if not in Power Play system",
   "minimised_level_fmt": "PP Lvl {rank}"
 }
