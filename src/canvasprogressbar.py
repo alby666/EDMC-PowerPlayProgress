@@ -7,7 +7,7 @@ This works around some of the limitations of the default Progressbar widget in T
 """
 
 class CanvasProgressBar:
-    def __init__(self, parent, width=200, height=30, bg="lightgray", fg="green", text_color="black"):
+    def __init__(self, parent, width=200, height=30, bg="lightgray", fg="green", text_color="black", text_font=("Arial", 12, "bold")):
         self.width = width
         self.height = height
         self.bg = bg
@@ -22,7 +22,7 @@ class CanvasProgressBar:
         self.progress_rect = self.canvas.create_rectangle(0, 0, 0, self.height, fill=self.fg, outline="")
 
         # Add a text label for the percentage
-        self.text_label = self.canvas.create_text(self.width // 2, self.height // 2, text="0%", font=("Arial", 12, "bold"), fill=self.text_color)
+        self.text_label = self.canvas.create_text(self.width // 2, self.height // 2, text="0%", font=text_font, fill=self.text_color)
 
     def update_progress(self, value):
         """Update progress bar and text label (value should be between 0 and 100)."""

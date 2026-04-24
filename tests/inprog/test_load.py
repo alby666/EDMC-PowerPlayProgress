@@ -110,6 +110,50 @@ class TestJournalEntry(unittest.TestCase):
         journal_entry("cmdr", False, system, "station", entry, {})
         self.assertTrue(any(sys.system == system for sys in self.mock_ppp.systems))
 
+    def test_location_event_sets_is_in_pp_system_true(self):
+        entry = {
+            "event": "Location",
+            "ControllingPower": "Jerome Archer",
+            "PowerplayState": "Fortified",
+            "PowerplayStateControlProgress": 0.1,
+            "PowerplayStateReinforcement": 100,
+            "PowerplayStateUndermining": 10
+        }
+        self.mock_ppp.is_in_pp_system = False
+        journal_entry("cmdr", False, "PPSystem", "station", entry, {})
+        self.assertTrue(self.mock_ppp.is_in_pp_system)
+
+    def test_location_event_sets_is_in_pp_system_false(self):
+        entry = {
+            "event": "Location",
+        }
+        self.mock_ppp.is_in_pp_system = True
+        journal_entry("cmdr", False, "NonPPSystem", "station", entry, {})
+        self.assertFalse(self.mock_ppp.is_in_pp_system)
+
+    def test_fsdjump_event_sets_is_in_pp_system_true(self):
+        entry = {
+            "event": "FSDJump",
+            "ControllingPower": "Yuri Grom",
+            "PowerplayState": "Fortified",
+            "PowerplayStateControlProgress": 0.2,
+            "PowerplayStateReinforcement": 200,
+            "PowerplayStateUndermining": 20
+        }
+        self.mock_ppp.is_in_pp_system = False
+        self.mock_ppp.systems = []
+        journal_entry("cmdr", False, "PPSystem", "station", entry, {})
+        self.assertTrue(self.mock_ppp.is_in_pp_system)
+
+    def test_fsdjump_event_sets_is_in_pp_system_false(self):
+        entry = {
+            "event": "FSDJump",
+        }
+        self.mock_ppp.is_in_pp_system = True
+        self.mock_ppp.systems = []
+        journal_entry("cmdr", False, "NonPPSystem", "station", entry, {})
+        self.assertFalse(self.mock_ppp.is_in_pp_system)
+
     def test_docked_event_starts_new_session(self):
         entry = {"event": "Docked"}
         old_session = MagicMock()

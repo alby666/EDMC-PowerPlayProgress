@@ -67,5 +67,9 @@
   "Mined:": "Extrait :",
   "OnFoot:": "À pied :",
   "Commit Crimes:": "Crimes commis :",
-  "Rival Power Kills:": "Éliminations de puissances rivales :"
+  "Rival Power Kills:": "Éliminations de puissances rivales :",
+  "display_mode_label": "Display mode when not in a Power Play system:",
+  "Always display": "Always display",
+  "Minimise if not in Power Play system": "Minimise if not in Power Play system",
+  "minimised_level_fmt": "PP Lvl {rank}"
 }

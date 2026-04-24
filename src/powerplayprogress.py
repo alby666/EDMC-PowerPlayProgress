@@ -43,6 +43,8 @@ class PowerPlayProgress:
     """
 
     bar_colours = ['Green', 'Orange', 'Match theme']
+    DISPLAY_MODE_ALWAYS = 'always'
+    DISPLAY_MODE_MINIMISE = 'minimise'
     
     def __init__(self) -> None:
         # Be sure to use names that wont collide in our config variables
@@ -59,6 +61,7 @@ class PowerPlayProgress:
         self.options_view_bar_colour = tk.StringVar(value=config.get_str('options_view_bar_colour', default=self.bar_colours[2]))
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
         self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
+        self.options_view_display_mode = tk.StringVar(value=config.get_str('options_view_display_mode', default=self.DISPLAY_MODE_MINIMISE))
 
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
@@ -100,6 +103,14 @@ class PowerPlayProgress:
 
         self.last_merits_gained = 0
         self.rares_window = None  # Track open rares window
+        self.is_in_pp_system = False  # Track if current system has PowerPlay
+        self.is_minimized = False  # Track if the display is manually minimized
+        self.minimised_frame: tk.Frame = tk.Frame()
+        self.minimised_pb: CanvasProgressBar = None
+        self.minimised_level_label: tk.Label = tk.Label()
+        self.toggle_button: tk.Label = tk.Label()
+        self.header_frame: tk.Frame = tk.Frame()
+        self.full_content_frame: tk.Frame = tk.Frame()
         logger.info("PowerPlayProgress instantiated")
 
     def on_load(self) -> str:
@@ -158,8 +169,17 @@ class PowerPlayProgress:
         frame.columnconfigure(3, weight=1)
 
         row_count = 0
-        
+
         row_count += 1
+        nb.Label(frame, text=t("display_mode_label"), justify=tk.LEFT).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
+        row_count += 1
+        nb.Radiobutton(frame, variable=self.options_view_display_mode, value=self.DISPLAY_MODE_ALWAYS, text=t("Always display")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        nb.Radiobutton(frame, variable=self.options_view_display_mode, value=self.DISPLAY_MODE_MINIMISE, text=t("Minimise if not in Power Play system")).grid(row=row_count, column=0, padx=20, pady=2, sticky="w")
+        row_count += 1
+        ttk.Separator(frame).grid(row=row_count, pady=10, sticky=tk.EW, columnspan=4)
+        row_count += 1
+        
         nb.Checkbutton(frame, variable=self.options_view_progress_bar, text=t("Show/hide Progress Bar")).grid(row=row_count, column=0, padx=5, pady=2, sticky="w")
         nb.Checkbutton(frame, variable=self.options_view_totals, text=t("Show/hide Totals")).grid(row=row_count, column=1, padx=5, pady=2, sticky="w")
         row_count += 1
@@ -245,6 +265,7 @@ class PowerPlayProgress:
         config.set('options_view_bar_colour', str(self.options_view_bar_colour.get()))
         config.set('options_view_socials', bool(self.options_view_socials.get()))
         config.set('options_custom_format', str(self.options_custom_format.get()))
+        config.set('options_view_display_mode', str(self.options_view_display_mode.get()))
         
         if self.options_view_bar_colour.get() == self.bar_colours[2]: # Match theme
             self.pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
@@ -659,27 +680,62 @@ class PowerPlayProgress:
         frame_row = 0
         self.frame = tk.Frame(parent)
         self.frame.grid_columnconfigure(0, weight=1)
-        self.powerplay_level_label = tk.Label(self.frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
-        self.powerplay_level_label.grid(row=frame_row, column=0, columnspan=2)
+
+        # Header frame with label and minimize/maximize toggle button
+        self.header_frame = tk.Frame(self.frame)
+        self.header_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        self.header_frame.grid_columnconfigure(0, weight=1)
+        self.header_frame.grid_columnconfigure(1, weight=0)
+        self.powerplay_level_label = tk.Label(self.header_frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
+        self.powerplay_level_label.grid(row=0, column=0, sticky="W")
+        self.toggle_button = tk.Label(self.header_frame, text="\u25BC", cursor="hand2", font=("Arial", 8))
+        self.toggle_button.grid(row=0, column=1, sticky="E", padx=2)
+        self.toggle_button.bind("<Button-1>", lambda e: self.toggle_minimise())
         frame_row += 1
+
+        # Minimised view: shows level label + small progress bar in one row
+        self.minimised_frame = tk.Frame(self.frame)
+        self.minimised_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        self.minimised_frame.grid_columnconfigure(0, weight=0)
+        self.minimised_frame.grid_columnconfigure(1, weight=1)
+        self.minimised_level_label = tk.Label(self.minimised_frame, text="", justify=tk.LEFT)
+        self.minimised_level_label.grid(row=0, column=0, sticky="W", padx=(0, 5))
+        self.minimised_pb = CanvasProgressBar(
+            self.minimised_frame,
+            width=120,
+            height=15,
+            fg="green" if config.get_int("theme") == 0 else "orange",
+            text_font=("Arial", 7, "bold")
+        )
+        self.minimised_pb.canvas.grid(row=0, column=1, sticky="W", padx=0, pady=2)
+        self.minimised_pb.update_progress(0)
+        self.minimised_frame.grid_remove()
+        frame_row += 1
+
+        # Full content frame - holds all the existing content
+        self.full_content_frame = tk.Frame(self.frame)
+        self.full_content_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        self.full_content_frame.grid_columnconfigure(0, weight=1)
+        frame_row += 1
+        content_row = 0
 
         try:
             update_version = self.version_check()
             #update_version = '0.9.1'  # for testing
             if update_version != '':
                 url = f"https://github.com/alby666/EDMC-PowerPlayProgress/releases/tag/v{update_version}"
-                update_link = MultiHyperlinkLabel(self.frame, text=t("version_available").format(version=update_version), foreground="blue", cursor="hand2", url=url)
-                update_link.grid(row=frame_row, columnspan=2, sticky="N")
-                frame_row += 1
+                update_link = MultiHyperlinkLabel(self.full_content_frame, text=t("version_available").format(version=update_version), foreground="blue", cursor="hand2", url=url)
+                update_link.grid(row=content_row, columnspan=2, sticky="N")
+                content_row += 1
         except Exception as ex:
             # Swallow any exceptions here, we don't want to crash the plugin if we can't check for updates
             logger.error('Failed to check for updates', exc_info=ex)
 
         # progressbar
-        self.progressbar_frame = tk.Frame(self.frame)
+        self.progressbar_frame = tk.Frame(self.full_content_frame)
         self.progressbar_frame.grid_columnconfigure(0, weight=1)
-        self.progressbar_frame.grid(row=frame_row, column=0, sticky="NSEW")
-        frame_row += 1
+        self.progressbar_frame.grid(row=content_row, column=0, sticky="NSEW")
+        content_row += 1
         self.pb = CanvasProgressBar(
             self.progressbar_frame,
             width=230,
@@ -689,9 +745,9 @@ class PowerPlayProgress:
         self.pb.update_progress(50)
 
         #Socials
-        self.socials_frame = tk.Frame(self.frame)
-        self.socials_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
-        frame_row += 1
+        self.socials_frame = tk.Frame(self.full_content_frame)
+        self.socials_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
+        content_row += 1
         self.socials_frame.grid_columnconfigure(0, weight=1)
         self.socials_frame.grid_columnconfigure(1, weight=1)
         self.socials_frame.grid_columnconfigure(2, weight=1)
@@ -702,9 +758,9 @@ class PowerPlayProgress:
         self.socials_power_label.grid(row=0, column=1)
         self.socials_link_discord.grid(row=0, column=2)
 
-        self.totals_frame = tk.Frame(self.frame)
-        self.totals_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
-        frame_row += 1
+        self.totals_frame = tk.Frame(self.full_content_frame)
+        self.totals_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
+        content_row += 1
         self.totals_frame.grid_columnconfigure(0, weight=0)
         self.totals_frame.grid_columnconfigure(1, weight=2)
 
@@ -725,35 +781,35 @@ class PowerPlayProgress:
         self.total_prev_merits_value = tk.Label(self.totals_frame, text="0")
         self.total_prev_merits_value.grid(row=3, column=1, sticky=tk.W)
 
-        self.mertits_by_system_frame = tk.Frame(self.frame)
+        self.mertits_by_system_frame = tk.Frame(self.full_content_frame)
         self.mertits_by_system_frame.grid_columnconfigure(0, weight=0)
         self.mertits_by_system_frame.grid_columnconfigure(1, weight=2)
         self.mertits_by_system_frame.grid_columnconfigure(2, weight=1)
-        self.mertits_by_system_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
-        frame_row += 1
+        self.mertits_by_system_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
+        content_row += 1
         self.merits_by_systems_label = tk.Label(self.mertits_by_system_frame, text=t("Merits by Systems:"))
 
-        self.pp_commods_frame = tk.Frame(self.frame)
+        self.pp_commods_frame = tk.Frame(self.full_content_frame)
         self.pp_commods_frame.grid_columnconfigure(0, weight=0)
         self.pp_commods_frame.grid_columnconfigure(1, weight=2)
         self.pp_commods_frame.grid_columnconfigure(2, weight=1)
-        self.pp_commods_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
-        frame_row += 1
+        self.pp_commods_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
+        content_row += 1
         self.powerplay_commodities_label = tk.Label(self.pp_commods_frame, text=t("powerplay_commodities_fmt").format(collected="", delivered=""))
 
-        self.merits_by_activty_frame = tk.Frame(self.frame)
+        self.merits_by_activty_frame = tk.Frame(self.full_content_frame)
         self.merits_by_activty_frame.grid_columnconfigure(0, weight=0)
         self.merits_by_activty_frame.grid_columnconfigure(1, weight=2)
         self.merits_by_activty_frame.grid_columnconfigure(2, weight=1)
-        self.merits_by_activty_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
-        frame_row += 1
+        self.merits_by_activty_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
+        content_row += 1
 
-        self.buttons_frame = tk.Frame(self.frame)
+        self.buttons_frame = tk.Frame(self.full_content_frame)
         self.buttons_frame.grid_columnconfigure(0, weight=0)
         self.buttons_frame.grid_columnconfigure(1, weight=0)
         self.buttons_frame.grid_columnconfigure(2, weight=0)
         self.buttons_frame.grid_columnconfigure(3, weight=1)
-        self.buttons_frame.grid(row=frame_row, column=0, columnspan=2, sticky="NSEW")
+        self.buttons_frame.grid(row=content_row, column=0, columnspan=2, sticky="NSEW")
         self.copy_button = tk.Button(
             self.buttons_frame,
             text=t("Copy"),
@@ -789,6 +845,12 @@ class PowerPlayProgress:
         
         return self.frame
 
+    def toggle_minimise(self) -> None:
+        """Toggle between minimised and full display."""
+        self.is_minimized = not self.is_minimized
+        if self.total_merits > 0:
+            self.Update_Ppp_Display()
+
     def Update_Ppp_Display(self) -> None:
         """
         Update the display with the current session and system data.
@@ -803,6 +865,44 @@ class PowerPlayProgress:
         except (locale.Error, ValueError):
             # Ignore locale errors and continue with default locale
             pass
+
+        # Determine display state based on display mode, powerplay system status, and manual toggle
+        display_mode = self.options_view_display_mode.get()
+        should_minimise = False
+
+        if self.is_minimized:
+            # Manual toggle always takes precedence - show minimised
+            should_minimise = True
+        elif display_mode == self.DISPLAY_MODE_MINIMISE and not self.is_in_pp_system:
+            should_minimise = True
+
+        if should_minimise:
+            # Show minimised view
+            self.toggle_button.config(text="\u25BC")
+            self.header_frame.grid()
+            self.powerplay_level_label.grid()
+            self.powerplay_level_label.config(text=t("powerplay_level_fmt").format(rank=self.current_session.power_play_rank, next_rank=self.current_session.power_play_rank + 1), justify=tk.CENTER)
+            self.toggle_button.grid()
+
+            # Update minimised progress bar
+            progress = round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2)
+            self.minimised_level_label.config(text=t("minimised_level_fmt").format(rank=self.current_session.power_play_rank))
+            self.minimised_pb.update_progress(progress)
+            if self.options_view_bar_colour.get() == self.bar_colours[2]:
+                self.minimised_pb.set_bar_colour('green' if config.get_int('theme') == 0 else 'orange')
+            else:
+                self.minimised_pb.set_bar_colour(self.options_view_bar_colour.get().lower())
+            self.minimised_frame.grid()
+            self.full_content_frame.grid_remove()
+            theme.update(self.frame)
+            theme.update(self.header_frame)
+            theme.update(self.minimised_frame)
+            return
+
+        # Full display mode
+        self.toggle_button.config(text="\u25B2")
+        self.minimised_frame.grid_remove()
+        self.full_content_frame.grid()
 
         ## Update the progress bar and label with the current session data
         if self.options_view_progress_bar.get():
@@ -1030,6 +1130,8 @@ class PowerPlayProgress:
         self.rares_button.grid(row=0, column=3, sticky="W", padx=2)
 
         theme.update(self.frame)
+        theme.update(self.header_frame)
+        theme.update(self.full_content_frame)
         theme.update(self.mertits_by_system_frame)
         theme.update(self.pp_commods_frame)
         theme.update(self.merits_by_activty_frame)
