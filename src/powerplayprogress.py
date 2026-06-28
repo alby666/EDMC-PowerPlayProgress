@@ -60,6 +60,9 @@ class PowerPlayProgress:
         self.options_view_socials = tk.BooleanVar(value=bool(config.get_bool('options_view_socials', default=True)))
         self.options_custom_format = tk.StringVar(value=config.get_str('options_custom_format', default='[{system}]({system_url}) - {merits} - {state}:{progress}'))
 
+        self._details_visible = True
+        self._details_toggle: tk.Button = None
+
         self.pb: CanvasProgressBar = None
         self.powerplay_level_label: tk.Label = tk.Label()
         self.powerplay_level_value = 0
@@ -649,6 +652,12 @@ class PowerPlayProgress:
             self.starting_merits = self.total_merits
             self.Update_Ppp_Display()
 
+    def _toggle_details(self) -> None:
+        self._details_visible = not self._details_visible
+        if self._details_toggle:
+            self._details_toggle.config(text="▼" if self._details_visible else "▲")
+        self.Update_Ppp_Display()
+
     def setup_main_ui(self, parent: tk.Frame) -> tk.Frame:
         """
         Create our entry on the main EDMC UI.
@@ -659,8 +668,25 @@ class PowerPlayProgress:
         frame_row = 0
         self.frame = tk.Frame(parent)
         self.frame.grid_columnconfigure(0, weight=1)
-        self.powerplay_level_label = tk.Label(self.frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
-        self.powerplay_level_label.grid(row=frame_row, column=0, columnspan=2)
+
+        self.title_frame = tk.Frame(self.frame)
+        self.title_frame.grid(row=frame_row, column=0, columnspan=2, sticky="ew")
+        self.title_frame.grid_columnconfigure(0, weight=1)
+
+        self.powerplay_level_label = tk.Label(self.title_frame, text=t("PowerPlay Progress: Awaiting data"), justify=tk.CENTER)
+        self.powerplay_level_label.grid(row=0, column=0, sticky="ew")
+
+        self._details_toggle = tk.Button(
+            self.title_frame,
+            text="▼",
+            command=self._toggle_details,
+            relief=tk.FLAT,
+            bd=0
+        )
+        self._details_toggle.grid(row=0, column=1, sticky="e")
+        theme.register(self._details_toggle)
+        theme.register(self.powerplay_level_label)
+
         frame_row += 1
 
         try:
@@ -804,11 +830,27 @@ class PowerPlayProgress:
             # Ignore locale errors and continue with default locale
             pass
 
+        if not self._details_visible:
+            if self.options_view_progress_bar.get():
+                self.powerplay_level_label.config(text=t("powerplay_level_fmt").format(rank=self.current_session.power_play_rank, next_rank=self.current_session.power_play_rank + 1), justify=tk.CENTER)
+            else:
+                self.powerplay_level_label.config(text=t("PowerPlay Progress"))
+            
+            self.progressbar_frame.grid_remove()
+            if self.pb and self.pb.canvas:
+                self.pb.canvas.grid_remove()
+            self.socials_frame.grid_remove()
+            self.totals_frame.grid_remove()
+            self.mertits_by_system_frame.grid_remove()
+            self.pp_commods_frame.grid_remove()
+            self.merits_by_activty_frame.grid_remove()
+            self.buttons_frame.grid_remove()
+            return
+
         ## Update the progress bar and label with the current session data
         if self.options_view_progress_bar.get():
             self.progressbar_frame.grid()
             self.pb.canvas.grid()
-            self.powerplay_level_label.grid()
             self.powerplay_level_label.config(text=t("powerplay_level_fmt").format(rank=self.current_session.power_play_rank, next_rank=self.current_session.power_play_rank + 1), justify=tk.CENTER)
             self.pb.update_progress(round((self.total_merits - self.CurrentRankLowerBound(self.current_session.power_play_rank)) / self.NextRankDifference(self.current_session.power_play_rank) * 100, 2))
 
@@ -817,10 +859,10 @@ class PowerPlayProgress:
             else: # orange or green
                 self.pb.set_bar_colour(self.options_view_bar_colour.get().lower())
         else:
-            self.powerplay_level_label.grid_remove()
+            self.powerplay_level_label.config(text=t("PowerPlay Progress"))
             self.progressbar_frame.grid_remove()
-            self.pb.canvas.grid_remove()
-            self.pb.canvas.grid_remove()
+            if self.pb and self.pb.canvas:
+                self.pb.canvas.grid_remove()
 
         #Socials
         if self.options_view_socials.get() and self.current_session.power_play != '':
