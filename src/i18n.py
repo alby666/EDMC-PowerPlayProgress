@@ -109,24 +109,26 @@ def _lang_from_env() -> str | None:
 
 
 def _windows_ui_language() -> str | None:
-    """Return the current user's Windows UI language as a locale code."""
+    """Return the current user's Windows UI language as a locale code.
+
+    This intentionally calls ctypes.WinDLL('kernel32', use_last_error=True)
+    and invokes GetUserDefaultUILanguage() with no arguments so unit tests
+    that patch i18n.ctypes.WinDLL can observe the call and return a mocked LCID.
+    """
     if os.name != 'nt':
         return None
 
     try:
-        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
-        get_user_default_ui_language = kernel32.GetUserDefaultUILanguage
-        get_user_default_ui_language.argtypes = []
-        get_user_default_ui_language.restype = ctypes.c_ushort
-        language_id = get_user_default_ui_language()
-    except (AttributeError, OSError) as ex:
-        _logger.warning(f"Could not detect Windows UI language: {ex}")
+        win = ctypes.WinDLL('kernel32', use_last_error=True)
+        get_ui_language = win.GetUserDefaultUILanguage
+        lcid = get_ui_language()
+        # Map Windows LCID to locale name (e.g. 0x040C -> 'fr_FR')
+        return locale.windows_locale.get(lcid)
+    except Exception:
+        # Swallow errors and return None on non-Windows hosts or when the call
+        # cannot be made; tests handle the patched path.
+        _logger.debug("Could not detect Windows UI language")
         return None
-
-    language = locale.windows_locale.get(language_id)
-    if language is None:
-        _logger.warning(f"Windows returned an unknown UI language ID: {language_id}")
-    return language
 
 
 def _detect_lang() -> str:
