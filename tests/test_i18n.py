@@ -54,6 +54,12 @@ class TestI18nSetup(unittest.TestCase):
             i18n.setup()
         self.assertEqual(i18n._translations.get('Reset'), 'Réinitialiser')
 
+    def test_setup_windows_language_tag_fallback(self):
+        """A Windows UI language tag like 'fr-FR' should fall back to fr.json."""
+        with patch.object(i18n, '_detect_lang', return_value='fr-FR'):
+            i18n.setup()
+        self.assertEqual(i18n._translations.get('Reset'), 'Réinitialiser')
+
     def test_setup_unknown_locale_uses_empty_translations(self):
         with patch.object(i18n, '_detect_lang', return_value='xx_xx'):
             i18n.setup()
@@ -120,6 +126,28 @@ class TestI18nT(unittest.TestCase):
 
 class TestDetectLang(unittest.TestCase):
     """Test the locale detection helper."""
+
+    def setUp(self):
+        # Keep environment and locale tests independent of the host OS language.
+        self.ui_language_patcher = patch.object(i18n, '_windows_ui_language', return_value=None)
+        self.ui_language_patcher.start()
+        self.addCleanup(self.ui_language_patcher.stop)
+
+    def test_windows_ui_language_takes_priority(self):
+        """Windows UI language should win over regional locale environment values."""
+        with patch.object(i18n.os, 'name', 'nt'):
+            with patch.object(i18n, '_windows_ui_language', return_value='fr_FR'):
+                with patch.dict('os.environ', {'LANG': 'en_GB'}, clear=True):
+                    self.assertEqual(i18n._detect_lang(), 'fr_fr')
+
+    def test_windows_ui_language_reads_user_default_language(self):
+        with patch.object(i18n.os, 'name', 'nt'):
+            with patch.object(i18n.ctypes, 'WinDLL', create=True) as win_dll:
+                get_ui_language = win_dll.return_value.GetUserDefaultUILanguage
+                get_ui_language.return_value = 0x040C
+                self.assertEqual(i18n._windows_ui_language(), 'fr_FR')
+                win_dll.assert_called_once_with('kernel32', use_last_error=True)
+                get_ui_language.assert_called_once_with()
 
     # --- Env var path (Linux / macOS) ---
 

@@ -10,6 +10,7 @@ Usage::
 """
 from __future__ import annotations
 
+import ctypes
 import json
 import locale
 import os
@@ -61,17 +62,18 @@ def _find_translation(lang_code: str) -> dict[str, str]:
     """
     translations_dir = os.path.join(os.path.dirname(__file__), 'translations')
 
+    normalized = lang_code.replace('-', '_').lower()
+
     # 1. Exact match (e.g. "fr_FR")
-    exact = os.path.join(translations_dir, f"{lang_code}.json")
+    exact = os.path.join(translations_dir, f"{normalized}.json")
     if os.path.exists(exact):
         return _load_file(exact)
 
     # 2. Language prefix only (e.g. "fr")
-    if '_' in lang_code:
-        base = lang_code.split('_')[0]
-        base_path = os.path.join(translations_dir, f"{base}.json")
-        if os.path.exists(base_path):
-            return _load_file(base_path)
+    base = normalized.split('_', 1)[0]
+    base_path = os.path.join(translations_dir, f"{base}.json")
+    if os.path.exists(base_path):
+        return _load_file(base_path)
 
     return {}
 
@@ -106,20 +108,44 @@ def _lang_from_env() -> str | None:
     return None
 
 
+def _windows_ui_language() -> str | None:
+    """Return the current user's Windows UI language as a locale code."""
+    if os.name != 'nt':
+        return None
+
+    try:
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        get_user_default_ui_language = kernel32.GetUserDefaultUILanguage
+        get_user_default_ui_language.argtypes = []
+        get_user_default_ui_language.restype = ctypes.c_ushort
+        language_id = get_user_default_ui_language()
+    except (AttributeError, OSError) as ex:
+        _logger.warning(f"Could not detect Windows UI language: {ex}")
+        return None
+
+    language = locale.windows_locale.get(language_id)
+    if language is None:
+        _logger.warning(f"Windows returned an unknown UI language ID: {language_id}")
+    return language
+
+
 def _detect_lang() -> str:
     """
     Return the best-guess ISO 639 language code for the running system.
 
     Detection order:
-    1. POSIX locale environment variables (``LANGUAGE``, ``LC_ALL``,
-       ``LC_MESSAGES``, ``LANG``) — primary on Linux and macOS.
-    2. ``locale.getlocale()`` after ``setlocale(LC_ALL, '')`` — primary on
-       Windows where env vars are not set.  Windows locale names such as
-       ``French_France`` are mapped to ISO codes via
-       :data:`_WINDOWS_LOCALE_MAP` (exact) then
-       :data:`_WINDOWS_LANG_PREFIX_MAP` (prefix).
-    3. Falls back to ``'en'`` if nothing can be determined.
+    1. The current user's Windows UI language.
+    2. POSIX locale environment variables (``LANGUAGE``, ``LC_ALL``,
+       ``LC_MESSAGES``, ``LANG``).
+    3. ``locale.getlocale()``.
+    4. Falls back to ``'en'`` if nothing can be determined.
     """
+    # On Windows, the user's UI language can differ from the regional locale.
+    ui_lang = _windows_ui_language()
+    if ui_lang is not None:
+        _logger.debug(f"Detected Windows UI language: {ui_lang}")
+        return ui_lang.lower()
+
     # --- Path 1: env vars (Linux / macOS) ---
     env_lang = _lang_from_env()
     if env_lang is not None:
