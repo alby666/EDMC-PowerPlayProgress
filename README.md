@@ -89,6 +89,10 @@ EDMC-PowerPlayProgress is a EDMC addon that assists Elite Dangerous cmdrs to tra
 ## Requirements
 * [EDMC] version 5.12 and above (python 3.11)
 
+## Language
+
+The plugin uses the current user's Windows UI language on Windows, falling back to locale-based detection if it cannot be read. On Linux and macOS, it uses the standard locale environment variables. If a translation is unavailable, English is used.
+
 ## Installation
 
 * Download the [latestrelease] of EDMC-PowerPlayProgress
@@ -107,4 +111,3 @@ Licensed under [MIT].
 [latestrelease]: https://github.com/alby666/EDMC-PowerPlayProgress/releases/latest
 [MIT]: https://github.com/alby666/EDMC-PowerPlayProgress/blob/main/LICENSE
 [alby666]: https://github.com/alby666
-
