@@ -141,6 +141,7 @@ class TestDetectLang(unittest.TestCase):
                     self.assertEqual(i18n._detect_lang(), 'fr_fr')
 
     def test_windows_ui_language_reads_user_default_language(self):
+        self.ui_language_patcher.stop()
         with patch.object(i18n.os, 'name', 'nt'):
             with patch.object(i18n.ctypes, 'WinDLL', create=True) as win_dll:
                 get_ui_language = win_dll.return_value.GetUserDefaultUILanguage
